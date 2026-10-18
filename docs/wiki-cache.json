@@ -1,0 +1,215 @@
+{
+ "__overview__@f768073439a2:qwen3-5-4b": {
+  "hash": "f768073439a2",
+  "doc": {
+   "summary": "The Breaking News Override module injects formatted HTML content into the character screen via Lua payloads, allowing server operators to display custom updates without modifying client-side code.",
+   "body": "# Breaking News Override Module\n\n## Overview\nThis C++ module intercepts packet transmission to inject a \"Breaking News\" alert into the game's character screen. It reads an HTML file specified by configuration, formats it with color codes and headers, and sends it as a chunked Lua payload using the `ServerAlertText` frame mechanism.\n\n## How It Works\nThe module operates through a two-script architecture that hooks into the server lifecycle and packet processing:\n\n1. **Initialization**: The `BreakingNewsWorldScript` triggers on `WORLDHOOK_ON_AFTER_CONFIG_LOAD`. It checks if the feature is enabled via `BreakingNews.Enable` and, if so, calls `LoadBreakingNews()` to read the file and format the text.\n2. **Packet Interception**: The `BreakingNewsServerScript` hooks into `SERVERHOOK_CAN_PACKET_SEND`. It intercepts packets (specifically `SMSG_CHAR_ENUM`) to check if a payload should be injected.\n3. **Payload Generation**: If enabled, it retrieves the pre-formatted string (`bn_Formatted`), splits it into 128-byte chunks using `GetChunks()`, and queues them via `SendChunkedPayload()`.\n\n### Key Functions and Classes\n\n| Component | Function/Class | Description |\n|-----------|----------------|-------------|\n| **BreakingNewsWorldScript** | `OnAfterConfigLoad` | Runs after config load; enables/disables the module based on `BreakingNews.Enable`. |\n| **BreakingNewsServerScript** | `CanPacketSend` | Hooks packet send logic; checks if news should be injected for character enum packets. |\n| **BreakingNewsServerScript** | `GetChunks` | Splits a string into fixed-size chunks (default 128 bytes) for safe payload transmission. |\n| **BreakingNewsServerScript** | `SendChunkedPayload` | Registers and queues the payload with the Warden system, handling verbose logging if enabled. |\n| **Core Logic** | `TryReadFile`, `TryReadNews`, `LoadBreakingNews` | Reads the HTML file, strips newlines/carriage returns, and formats the final string using `_midPayloadFmt`. |\n\n## Configuration\nOperators can control the module's behavior through the following keys in `breakingnews.conf`:\n\n| Option | Type | Default | Description |\n|--------|------|---------|-------------|\n| `BreakingNews.Enable` | bool | 0 (Disabled) | Enables or disables the breaking news feature. |\n| `BreakingNews.Title` | string | \"Breaking News\" | The title displayed above the body text. |\n| `BreakingNews.HtmlPath` | string | \"./breakingnews.html\" | Path to the HTML file containing the content. |\n| `BreakingNews.Cache` | bool | 1 (Enabled) | Caches news on startup; set to 0 to refresh on every login. |\n| `BreakingNews.Verbose` | bool | 0 (Disabled) | Enables debug logging for payload transmission. |\n\n## Usage Example\n\n### Configuration File (`breakingnews.conf`)\nTo enable the module and point it to a custom HTML file:\n\n```ini\n[worldserver]\n\nBreakingNews.Enable = 1\nBreakingNews.Title = \"Server Update\"\nBreakingNews.HtmlPath = \"/path/to/custom/news.html\"\nBreakingNews.Cache = 1\nBreakingNews.Verbose = 0\n```\n\n### Injected Content File (`custom/news.html`)\nThe following is a literal, copy-paste example of the HTML content that will be processed and injected. It adheres to the allowed subset (no CSS, no divs, no scripts) and uses Yggdrasil's accent color `|cffD4AF37`.\n\n```html\n<html>\n<body>\n    <br/>\n    <h3>|cffD4AF37Server Update|r</h3>\n    <br/>\n    <p>|cffD4AF37Major Changes:|r We have implemented smooth Catmull-Rom pathing and fixed passenger positions on player mounts.</p>\n    <br/>\n    <p>|cffD4AF37Bug Fixes:|r Numerous bugs have been averaged out, resulting in a more stable experience.</p>\n    <br/>\n    <p><a href=\"https://example.com\">Website</a> | <a href=\"https://discord.gg/xyz\">Discord</a></p>\n</body>\n</html>\n```",
+   "ai": true
+  },
+  "raw": "{\"summary\": \"The Breaking News Override module injects formatted HTML content into the character screen via Lua payloads, allowing server operators to display custom updates without modifying client-side code.\", \"body\": \"# Breaking News Override Module\\n\\n## Overview\\nThis C++ module intercepts packet transmission to inject a \\\"Breaking News\\\" alert into the game's character screen. It reads an HTML file specified by configuration, formats it with color codes and headers, and sends it as a chunked Lua payload using the `ServerAlertText` frame mechanism.\\n\\n## How It Works\\nThe module operates through a two-script architecture that hooks into the server lifecycle and packet processing:\\n\\n1. **Initialization**: The `BreakingNewsWorldScript` triggers on `WORLDHOOK_ON_AFTER_CONFIG_LOAD`. It checks if the feature is enabled via `BreakingNews.Enable` and, if so, calls `LoadBreakingNews()` to read the file and format the text.\\n2. **Packet Interception**: The `BreakingNewsServerScript` hooks into `SERVERHOOK_CAN_PACKET_SEND`. It intercepts packets (specifically `SMSG_CHAR_ENUM`) to check if a payload should be injected.\\n3. **Payload Generation**: If enabled, it retrieves the pre-formatted string (`bn_Formatted`), splits it into 128-byte chunks using `GetChunks()`, and queues them via `SendChunkedPayload()`.\\n\\n### Key Functions and Classes\\n\\n| Component | Function/Class | Description |\\n|-----------|----------------|-------------|\\n| **BreakingNewsWorldScript** | `OnAfterConfigLoad` | Runs after config load; enables/disables the module based on `BreakingNews.Enable`. |\\n| **BreakingNewsServerScript** | `CanPacketSend` | Hooks packet send logic; checks if news should be injected for character enum packets. |\\n| **BreakingNewsServerScript** | `GetChunks` | Splits a string into fixed-size chunks (default 128 bytes) for safe payload transmission. |\\n| **BreakingNewsServerScript** | `SendChunkedPayload` | Registers and queues the payload with the Warden system, handling verbose logging if enabled. |\\n| **Core Logic** | `TryReadFile`, `TryReadNews`, `LoadBreakingNews` | Reads the HTML file, strips newlines/carriage returns, and formats the final string using `_midPayloadFmt`. |\\n\\n## Configuration\\nOperators can control the module's behavior through the following keys in `breakingnews.conf`:\\n\\n| Option | Type | Default | Description |\\n|--------|------|---------|-------------|\\n| `BreakingNews.Enable` | bool | 0 (Disabled) | Enables or disables the breaking news feature. |\\n| `BreakingNews.Title` | string | \\\"Breaking News\\\" | The title displayed above the body text. |\\n| `BreakingNews.HtmlPath` | string | \\\"./breakingnews.html\\\" | Path to the HTML file containing the content. |\\n| `BreakingNews.Cache` | bool | 1 (Enabled) | Caches news on startup; set to 0 to refresh on every login. |\\n| `BreakingNews.Verbose` | bool | 0 (Disabled) | Enables debug logging for payload transmission. |\\n\\n## Usage Example\\n\\n### Configuration File (`breakingnews.conf`)\\nTo enable the module and point it to a custom HTML file:\\n\\n```ini\\n[worldserver]\\n\\nBreakingNews.Enable = 1\\nBreakingNews.Title = \\\"Server Update\\\"\\nBreakingNews.HtmlPath = \\\"/path/to/custom/news.html\\\"\\nBreakingNews.Cache = 1\\nBreakingNews.Verbose = 0\\n```\\n\\n### Injected Content File (`custom/news.html`)\\nThe following is a literal, copy-paste example of the HTML content that will be processed and injected. It adheres to the allowed subset (no CSS, no divs, no scripts) and uses Yggdrasil's accent color `|cffD4AF37`.\\n\\n```html\\n<html>\\n<body>\\n    <br/>\\n    <h3>|cffD4AF37Server Update|r</h3>\\n    <br/>\\n    <p>|cffD4AF37Major Changes:|r We have implemented smooth Catmull-Rom pathing and fixed passenger positions on player mounts.</p>\\n    <br/>\\n    <p>|cffD4AF37Bug Fixes:|r Numerous bugs have been averaged out, resulting in a more stable experience.</p>\\n    <br/>\\n    <p><a href=\\\"https://example.com\\\">Website</a> | <a href=\\\"https://discord.gg/xyz\\\">Discord</a></p>\\n</body>\\n</html>\\n```\"\n}",
+  "model": "qwen3.5:4b"
+ },
+ "src/BreakingNews.cpp::TryReadFile@428b7907:qwen3-5-4b": {
+  "hash": "dcbacbb727c6",
+  "doc": {
+   "summary": "Attempts to read a file specified by path into the provided string reference, returning false on failure and true on success.",
+   "overview": "This function opens a file using the given path and reads its entire contents line by line into an internal buffer. It then concatenates these lines into the output string while removing all carriage return and newline characters to ensure a clean result. The operation returns false if the file cannot be opened, otherwise it returns true.",
+   "params": [
+    {
+     "name": "path",
+     "desc": "The full path to the file that should be read."
+    },
+    {
+     "name": "bn_Result",
+     "desc": "A reference to a string where the concatenated, newline-free content of the file will be stored upon success."
+    }
+   ],
+   "returns": "bool",
+   "side_effects": "File I/O",
+   "notes": "The function modifies the contents of bn_Result by clearing it before writing new data. Callers should ensure they handle the return value to distinguish between file access failure and successful read.",
+   "ai": true
+  },
+  "raw": "{\n  \"summary\": \"Attempts to read a file specified by path into the provided string reference, returning false on failure and true on success.\",\n  \"overview\": \"This function opens a file using the given path and reads its entire contents line by line into an internal buffer. It then concatenates these lines into the output string while removing all carriage return and newline characters to ensure a clean result. The operation returns false if the file cannot be opened, otherwise it returns true.\",\n  \"params\": [\n    {\n      \"name\": \"path\",\n      \"desc\": \"The full path to the file that should be read.\"\n    },\n    {\n      \"name\": \"bn_Result\",\n      \"desc\": \"A reference to a string where the concatenated, newline-free content of the file will be stored upon success.\"\n    }\n  ],\n  \"returns\": \"bool\",\n  \"side_effects\": \"File I/O\",\n  \"notes\": \"The function modifies the contents of bn_Result by clearing it before writing new data. Callers should ensure they handle the return value to distinguish between file access failure and successful read.\"\n}",
+  "model": "qwen3.5:4b"
+ },
+ "src/BreakingNews.cpp::TryReadNews@7f470423:qwen3-5-4b": {
+  "hash": "47454d6c6ca7",
+  "doc": {
+   "summary": "Attempts to read the breaking news HTML content from a configured file path and stores it in the provided string reference.",
+   "overview": "This function retrieves the title configuration and then attempts to read an HTML file specified by the 'BreakingNews.HtmlPath' option. It returns false if the file path is empty or if the file cannot be read, otherwise it populates the input string with the file contents and returns true.",
+   "params": [
+    {
+     "name": "bn_Result",
+     "desc": "A reference to a std::string that will be populated with the content of the breaking news HTML file upon success."
+    }
+   ],
+   "returns": "bool",
+   "side_effects": "I/O (file read), global state (updates bn_Title)",
+   "notes": "Callers must ensure the string is not const. Returns false if the configured path is empty or the file read fails; in these cases, bn_Result remains unchanged.",
+   "ai": true
+  },
+  "raw": "{\n  \"summary\": \"Attempts to read the breaking news HTML content from a configured file path and stores it in the provided string reference.\",\n  \"overview\": \"This function retrieves the title configuration and then attempts to read an HTML file specified by the 'BreakingNews.HtmlPath' option. It returns false if the file path is empty or if the file cannot be read, otherwise it populates the input string with the file contents and returns true.\",\n  \"params\": [\n    {\n      \"name\": \"bn_Result\",\n      \"desc\": \"A reference to a std::string that will be populated with the content of the breaking news HTML file upon success.\"\n    }\n  ],\n  \"returns\": \"bool\",\n  \"side_effects\": \"I/O (file read), global state (updates bn_Title)\",\n  \"notes\": \"Callers must ensure the string is not const. Returns false if the configured path is empty or the file read fails; in these cases, bn_Result remains unchanged.\"\n}",
+  "model": "qwen3.5:4b"
+ },
+ "src/BreakingNews.cpp::GetChunks@1eafc598:qwen3-5-4b": {
+  "hash": "53e434cdcba1",
+  "doc": {
+   "summary": "Splits a given string into fixed-size substrings and returns them as a vector.",
+   "overview": "This function takes an input string and a chunk size, then iterates through the string to extract substrings of that specific length. Each extracted substring is added to a result vector which is returned to the caller. The logic ensures that the final chunk may be shorter than the specified chunkSize if the original string does not end on a multiple of that boundary.",
+   "params": [
+    {
+     "name": "s",
+     "desc": "The input string to be split into chunks."
+    },
+    {
+     "name": "chunkSize",
+     "desc": "The desired size for each chunk in the resulting vector."
+    }
+   ],
+   "returns": "std::vector<std::string>",
+   "side_effects": "None",
+   "notes": "Callers should ensure chunkSize is greater than zero to avoid infinite loops or unexpected behavior. The function does not modify global state or perform I/O operations.",
+   "ai": true
+  },
+  "raw": "{\n  \"summary\": \"Splits a given string into fixed-size substrings and returns them as a vector.\",\n  \"overview\": \"This function takes an input string and a chunk size, then iterates through the string to extract substrings of that specific length. Each extracted substring is added to a result vector which is returned to the caller. The logic ensures that the final chunk may be shorter than the specified chunkSize if the original string does not end on a multiple of that boundary.\",\n  \"params\": [\n    {\n      \"name\": \"s\",\n      \"desc\": \"The input string to be split into chunks.\"\n    },\n    {\n      \"name\": \"chunkSize\",\n      \"desc\": \"The desired size for each chunk in the resulting vector.\"\n    }\n  ],\n  \"returns\": \"std::vector<std::string>\",\n  \"side_effects\": \"None\",\n  \"notes\": \"Callers should ensure chunkSize is greater than zero to avoid infinite loops or unexpected behavior. The function does not modify global state or perform I/O operations.\"\n}",
+  "model": "qwen3.5:4b"
+ },
+ "src/BreakingNews.cpp::SendChunkedPayload@03ccc612:qwen3-5-4b": {
+  "hash": "419b7f971def",
+  "doc": {
+   "summary": "Sends a breaking news payload to the warden in three parts: pre, mid, and post.",
+   "overview": "This function divides a given payload string into chunks of specified size and distributes them sequentially to the warden. It registers and queues both pre-payload and post-payload strings along with any intermediate chunks, ensuring the warden performs forced checks after each transmission step.",
+   "params": [
+    {
+     "name": "warden",
+     "desc": "Pointer to the Warden object that receives the payload."
+    },
+    {
+     "name": "payloadMgr",
+     "desc": "Pointer to the WardenPayloadMgr used for registering and queuing payloads."
+    },
+    {
+     "name": "payload",
+     "desc": "The complete payload string to be split into chunks."
+    },
+    {
+     "name": "chunkSize",
+     "desc": "The maximum number of characters allowed in each chunk."
+    }
+   ],
+   "returns": "void",
+   "side_effects": "Network (payload transmission), Global state (payload registration and queuing)",
+   "notes": "Callers must ensure the warden is active. Edge case: if chunkSize exceeds payload length, only one chunk will be generated.",
+   "ai": true
+  },
+  "raw": "{\n  \"summary\": \"Sends a breaking news payload to the warden in three parts: pre, mid, and post.\",\n  \"overview\": \"This function divides a given payload string into chunks of specified size and distributes them sequentially to the warden. It registers and queues both pre-payload and post-payload strings along with any intermediate chunks, ensuring the warden performs forced checks after each transmission step.\",\n  \"params\": [\n    {\n      \"name\": \"warden\",\n      \"desc\": \"Pointer to the Warden object that receives the payload.\"\n    },\n    {\n      \"name\": \"payloadMgr\",\n      \"desc\": \"Pointer to the WardenPayloadMgr used for registering and queuing payloads.\"\n    },\n    {\n      \"name\": \"payload\",\n      \"desc\": \"The complete payload string to be split into chunks.\"\n    },\n    {\n      \"name\": \"chunkSize\",\n      \"desc\": \"The maximum number of characters allowed in each chunk.\"\n    }\n  ],\n  \"returns\": \"void\",\n  \"side_effects\": \"Network (payload transmission), Global state (payload registration and queuing)\",\n  \"notes\": \"Callers must ensure the warden is active. Edge case: if chunkSize exceeds payload length, only one chunk will be generated.\"\n}",
+  "model": "qwen3.5:4b"
+ },
+ "src/BreakingNews.cpp::LoadBreakingNews@3dbccc22:qwen3-5-4b": {
+  "hash": "71ae8edda6b8",
+  "doc": {
+   "summary": "Loads the breaking news title and body from configuration and file storage, then updates internal state under a mutex lock.",
+   "overview": "This function retrieves the breaking news title using a configuration manager with a default fallback value. It attempts to read the news body from a file via TryReadNews, logging an error and returning early if the operation fails. Upon success, it acquires a mutex lock before updating the internal title, body, and formatted string variables.",
+   "params": [],
+   "returns": "void",
+   "side_effects": "Updates global state (bn_Title, bn_Body, bn_Formatted); performs file I/O via TryReadNews; uses locking via std::lock_guard.",
+   "notes": "Callers should ensure the configuration manager is initialized before invoking this function. If the news file does not exist or cannot be read, the function exits without modifying global state.",
+   "ai": true
+  },
+  "raw": "{\n  \"summary\": \"Loads the breaking news title and body from configuration and file storage, then updates internal state under a mutex lock.\",\n  \"overview\": \"This function retrieves the breaking news title using a configuration manager with a default fallback value. It attempts to read the news body from a file via TryReadNews, logging an error and returning early if the operation fails. Upon success, it acquires a mutex lock before updating the internal title, body, and formatted string variables.\",\n  \"params\": [],\n  \"returns\": \"void\",\n  \"side_effects\": \"Updates global state (bn_Title, bn_Body, bn_Formatted); performs file I/O via TryReadNews; uses locking via std::lock_guard.\",\n  \"notes\": \"Callers should ensure the configuration manager is initialized before invoking this function. If the news file does not exist or cannot be read, the function exits without modifying global state.\"\n}",
+  "model": "qwen3.5:4b"
+ },
+ "src/BreakingNews.cpp::CanPacketSend@795198f3:qwen3-5-4b": {
+  "hash": "520508367a37",
+  "doc": {
+   "summary": "Checks if a packet can be sent by verifying breaking news settings and conditionally processing character enumeration payloads.",
+   "overview": "This function first acquires a lock to safely read the global breaking news configuration state. If notifications are disabled, it immediately returns true; otherwise, it specifically handles SMSG_CHAR_ENUM packets by checking for valid warden initialization and clearing any queued payloads before loading and sending new news data.",
+   "params": [
+    {
+     "name": "session",
+     "desc": "Pointer to the WorldSession object representing the client connection."
+    },
+    {
+     "name": "packet",
+     "desc": "Reference to the WorldPacket object being evaluated for sending."
+    }
+   ],
+   "returns": "bool",
+   "side_effects": "Network (SendChunkedPayload), Global State (LoadBreakingNews, bn_Enabled, bn_Formatted)",
+   "notes": "Caller must ensure packet.opcode is SMSG_CHAR_ENUM to trigger payload processing; returns true regardless of success or failure.",
+   "ai": true
+  },
+  "raw": "{\n  \"summary\": \"Checks if a packet can be sent by verifying breaking news settings and conditionally processing character enumeration payloads.\",\n  \"overview\": \"This function first acquires a lock to safely read the global breaking news configuration state. If notifications are disabled, it immediately returns true; otherwise, it specifically handles SMSG_CHAR_ENUM packets by checking for valid warden initialization and clearing any queued payloads before loading and sending new news data.\",\n  \"params\": [\n    {\n      \"name\": \"session\",\n      \"desc\": \"Pointer to the WorldSession object representing the client connection.\"\n    },\n    {\n      \"name\": \"packet\",\n      \"desc\": \"Reference to the WorldPacket object being evaluated for sending.\"\n    }\n  ],\n  \"returns\": \"bool\",\n  \"side_effects\": \"Network (SendChunkedPayload), Global State (LoadBreakingNews, bn_Enabled, bn_Formatted)\",\n  \"notes\": \"Caller must ensure packet.opcode is SMSG_CHAR_ENUM to trigger payload processing; returns true regardless of success or failure.\"\n}",
+  "model": "qwen3.5:4b"
+ },
+ "src/BreakingNews.cpp::OnAfterConfigLoad@d8ef3d99:qwen3-5-4b": {
+  "hash": "182563d9a02b",
+  "doc": {
+   "summary": "OnAfterConfigLoad initializes the Breaking News system by reading configuration and updating the global enabled state.",
+   "overview": "This function is invoked immediately after the server's configuration has been fully loaded to ensure the Breaking News feature respects its initial settings. It retrieves the 'Enable' option from the configuration manager, updates a thread-safe global flag within a mutex lock, and proceeds to load news content only if the feature is enabled.",
+   "params": [],
+   "returns": "void",
+   "side_effects": "Global state (bn_Enabled), I/O (LoadBreakingNews)",
+   "notes": "Must be called exactly once after config loading; LoadBreakingNews may perform network operations.",
+   "ai": true
+  },
+  "raw": "{\n  \"summary\": \"OnAfterConfigLoad initializes the Breaking News system by reading configuration and updating the global enabled state.\",\n  \"overview\": \"This function is invoked immediately after the server's configuration has been fully loaded to ensure the Breaking News feature respects its initial settings. It retrieves the 'Enable' option from the configuration manager, updates a thread-safe global flag within a mutex lock, and proceeds to load news content only if the feature is enabled.\",\n  \"params\": [],\n  \"returns\": \"void\",\n  \"side_effects\": \"Global state (bn_Enabled), I/O (LoadBreakingNews)\",\n  \"notes\": \"Must be called exactly once after config loading; LoadBreakingNews may perform network operations.\"\n}",
+  "model": "qwen3.5:4b"
+ },
+ "src/BreakingNews.cpp::AddBreakingNewsScripts@7c636d1e:qwen3-5-4b": {
+  "hash": "d464dc22cd93",
+  "doc": {
+   "summary": "Instantiates the world and server scripts required for the breaking news system.",
+   "overview": "This function initializes the core components of the breaking news feature by creating two distinct script instances. It first constructs a BreakingNewsWorldScript to handle in-game logic, followed by a BreakingNewsServerScript to manage backend operations. These objects are essential for processing and delivering breaking news events within the game environment.",
+   "params": [],
+   "returns": "void",
+   "side_effects": "Object creation; potential memory allocation",
+   "notes": "Must be called before any breaking news events are triggered to ensure script availability.",
+   "ai": true
+  },
+  "raw": "{\n  \"summary\": \"Instantiates the world and server scripts required for the breaking news system.\",\n  \"overview\": \"This function initializes the core components of the breaking news feature by creating two distinct script instances. It first constructs a BreakingNewsWorldScript to handle in-game logic, followed by a BreakingNewsServerScript to manage backend operations. These objects are essential for processing and delivering breaking news events within the game environment.\",\n  \"params\": [],\n  \"returns\": \"void\",\n  \"side_effects\": \"Object creation; potential memory allocation\",\n  \"notes\": \"Must be called before any breaking news events are triggered to ensure script availability.\"\n}",
+  "model": "qwen3.5:4b"
+ },
+ "src/BreakingNews.h::BreakingNewsServerScript@5ef56616:qwen3-5-4b": {
+  "hash": "6ddca93c6500",
+  "doc": {
+   "summary": "A server script hook designed to intercept and manage packet transmission for specific game mechanics.",
+   "overview": "The BreakingNewsServerScript class extends the base ServerScript functionality by registering a hook capable of modifying outgoing packets. It provides utility methods for processing chunked data payloads, allowing the server to efficiently transmit large amounts of information in smaller segments to clients or entities like wardens.",
+   "params": [],
+   "returns": "void",
+   "side_effects": "Network",
+   "notes": "Callers should ensure packet integrity is maintained when using GetChunks and SendChunkedPayload. Edge cases include handling empty payloads or invalid chunk sizes.",
+   "ai": true
+  },
+  "raw": "{\n  \"summary\": \"A server script hook designed to intercept and manage packet transmission for specific game mechanics.\",\n  \"overview\": \"The BreakingNewsServerScript class extends the base ServerScript functionality by registering a hook capable of modifying outgoing packets. It provides utility methods for processing chunked data payloads, allowing the server to efficiently transmit large amounts of information in smaller segments to clients or entities like wardens.\",\n  \"params\": [],\n  \"returns\": \"void\",\n  \"side_effects\": \"Network\",\n  \"notes\": \"Callers should ensure packet integrity is maintained when using GetChunks and SendChunkedPayload. Edge cases include handling empty payloads or invalid chunk sizes.\"\n}",
+  "model": "qwen3.5:4b"
+ },
+ "src/BreakingNews.h::BreakingNewsWorldScript@75ebe8fa:qwen3-5-4b": {
+  "hash": "b8d5153e87e0",
+  "doc": {
+   "summary": "The BreakingNewsWorldScript class is a lightweight C++ wrapper that registers itself to execute custom logic immediately after the game server's configuration files are loaded.",
+   "overview": "This class extends WorldScript and initializes with a hook defined as WORLDHOOK_ON_AFTER_CONFIG_LOAD, ensuring its OnAfterConfigLoad method runs at startup. It is designed for scenarios where immediate access to fully initialized global state or configuration data is required without waiting for gameplay events. The implementation relies on the base WorldScript framework to manage lifecycle hooks.",
+   "params": [],
+   "returns": "void",
+   "side_effects": "None",
+   "notes": "Callers should ensure that any global variables accessed within OnAfterConfigLoad are properly initialized before this hook fires. Edge cases include scenarios where the configuration load fails or is skipped, which may prevent the hook from executing.",
+   "ai": true
+  },
+  "raw": "{\n  \"summary\": \"The BreakingNewsWorldScript class is a lightweight C++ wrapper that registers itself to execute custom logic immediately after the game server's configuration files are loaded.\",\n  \"overview\": \"This class extends WorldScript and initializes with a hook defined as WORLDHOOK_ON_AFTER_CONFIG_LOAD, ensuring its OnAfterConfigLoad method runs at startup. It is designed for scenarios where immediate access to fully initialized global state or configuration data is required without waiting for gameplay events. The implementation relies on the base WorldScript framework to manage lifecycle hooks.\",\n  \"params\": [],\n  \"returns\": \"void\",\n  \"side_effects\": \"None\",\n  \"notes\": \"Callers should ensure that any global variables accessed within OnAfterConfigLoad are properly initialized before this hook fires. Edge cases include scenarios where the configuration load fails or is skipped, which may prevent the hook from executing.\"\n}",
+  "model": "qwen3.5:4b"
+ },
+ "src/MP_loader.cpp::Addmod_breaking_news_overrideScripts@6d3490a0:qwen3-5-4b": {
+  "hash": "5657a04beafb",
+  "doc": {
+   "summary": "Adds the breaking news script override functionality to the game server.",
+   "overview": "This function serves as a thin wrapper that delegates all logic to the internal AddBreakingNewsScripts method. It is primarily used by the MP_loader module to ensure the necessary scripts are registered when the server initializes or when specific mod conditions are met. The implementation relies on the existing script loading infrastructure within the game's core.",
+   "params": [],
+   "returns": "void",
+   "side_effects": "Script registration, internal state modification",
+   "notes": "Callers should ensure this is invoked during appropriate initialization phases to avoid runtime errors. No external dependencies or global state modifications beyond script loading are performed.",
+   "ai": true
+  },
+  "raw": "{\n  \"summary\": \"Adds the breaking news script override functionality to the game server.\",\n  \"overview\": \"This function serves as a thin wrapper that delegates all logic to the internal AddBreakingNewsScripts method. It is primarily used by the MP_loader module to ensure the necessary scripts are registered when the server initializes or when specific mod conditions are met. The implementation relies on the existing script loading infrastructure within the game's core.\",\n  \"params\": [],\n  \"returns\": \"void\",\n  \"side_effects\": \"Script registration, internal state modification\",\n  \"notes\": \"Callers should ensure this is invoked during appropriate initialization phases to avoid runtime errors. No external dependencies or global state modifications beyond script loading are performed.\"\n}",
+  "model": "qwen3.5:4b"
+ }
+}
