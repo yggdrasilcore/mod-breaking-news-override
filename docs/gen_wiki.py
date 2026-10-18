@@ -353,7 +353,7 @@ ECHO_RE = re.compile(
 )
 
 
-def _post(url, payload, timeout=300):
+def _post(url, payload, timeout=43200):
     req = urllib.request.Request(
         url, data=json.dumps(payload).encode(), headers={"Content-Type": "application/json"}
     )
