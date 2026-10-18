@@ -1,0 +1,349 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MODULE_LABEL</title>
+<link rel="icon" href="favicon.ico">
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+YLA_CSS_PLACEHOLDER
+</style>
+<style>
+/* Wiki layout: file tree | symbol list | content. */
+#app{grid-template-columns:auto minmax(0,1fr)}
+#sidebar{grid-template-columns:max-content max-content;max-width:74vw;transition:max-width .25s ease,transform .2s ease}
+@media (max-width:900px){#app{grid-template-columns:1fr}}
+@media (min-width:901px){
+#app.sidebar-collapsed #sidebar{max-width:0;border-right-color:transparent}
+#app.sidebar-collapsed #sidebar nav{overflow:hidden}
+}
+#file-panel{display:flex;flex-direction:column;min-height:0;overflow:hidden;border-right:1px solid var(--border)}
+#sym-panel{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+#file-tree{overflow-y:auto;flex:1;min-height:0}
+#sym-list{overflow-y:auto;flex:1;min-height:0}
+#file-panel{max-width:34vw}#sym-panel{max-width:34vw}
+.tree-node{width:100%}
+.tree-link,.method-item{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tree-link.active{color:var(--purple3);font-weight:700}
+.file-kind{font-size:10px;color:var(--muted);border:1px solid var(--border);border-radius:10px;padding:0 6px;margin-left:6px;flex:none}
+.hero{max-width:min(760px,100%);margin:0 auto;padding:8vh 4vw 4vh;text-align:center}
+.hero img{max-width:min(100%,420px);height:auto;display:block;margin:0 auto 18px}
+.hero .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--purple);margin-bottom:10px}
+.hero h1{font-size:clamp(30px,4.5vw,44px);margin:0 0 12px}
+.hero .tagline{font-size:clamp(14px,1.6vw,17px);color:var(--muted);line-height:1.7;margin:0 auto;max-width:min(620px,100%)}
+.stat-row{display:flex;gap:12px;flex-wrap:wrap;margin:22px 0;justify-content:center}
+.stat{border:1px solid var(--border);border-radius:var(--radius);padding:12px 22px;background:var(--surface2)}
+.stat b{font-size:24px;display:block;color:var(--purple3)}
+.stat span{font-size:12px;color:var(--muted)}
+.home-links{margin-top:10px;text-align:center}
+.home-links a{color:var(--purple);text-decoration:none}
+.home-links a:hover{text-decoration:underline}
+.home-overview{max-width:860px;margin:0 auto 48px;padding:0 4vw}
+.home-overview h2{font-size:19px;font-weight:600;color:var(--purple3);margin:26px 0 10px}
+.home-overview h3{font-size:15px;font-weight:600;color:var(--purple3);margin:20px 0 8px}
+.home-overview p{color:var(--text);line-height:1.8;margin-bottom:12px}
+.home-overview ul{margin:0 0 12px 22px}
+.home-overview li{color:var(--text);line-height:1.75;margin-bottom:5px}
+.wiki-code{background:#0d0d14;border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin:12px 0;overflow-x:auto}
+body.light .wiki-code{background:#ebebf3}
+.wiki-code code{font-family:'Consolas','Fira Code',monospace;font-size:12.5px;color:var(--green);line-height:1.55;white-space:pre}
+.wiki-table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+.wiki-table th{padding:7px 12px;background:var(--surface2);color:var(--muted);font-weight:600;text-align:left;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.6px}
+.wiki-table td{padding:6px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top}
+.wiki-table td:first-child{font-family:'Consolas',monospace;color:var(--yellow);white-space:nowrap}
+.wiki-table tbody tr:hover{background:var(--surface2)}
+.wiki-ul{margin:8px 0 12px 22px}
+.wiki-ul li{color:var(--text);line-height:1.7;margin-bottom:4px}
+footer#foot{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--border);color:var(--muted);font-size:12px;padding:8px 16px;display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;z-index:60}
+#content{padding-bottom:60px}
+.wiki-doc h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:16px 0 6px}
+.wiki-doc p{color:var(--text);line-height:1.75;max-width:820px}
+.wiki-param{display:flex;gap:10px;align-items:baseline;margin-bottom:5px;font-size:13px;flex-wrap:wrap}
+.wiki-param .pn{color:var(--green);font-family:'Consolas',monospace;flex:none}
+.wiki-param .pt{color:var(--blue);font-family:'Consolas',monospace;font-size:12px;flex:none}
+.wiki-param .pd{color:var(--muted);flex:1;min-width:min-content}
+.pending{color:var(--orange)}
+.sig-line{font-family:'Consolas',monospace;font-size:12.5px;color:var(--yellow);background:#0d0d14;border:1px solid var(--border);border-radius:var(--radius);padding:8px 14px;margin:6px 0 14px;overflow-x:auto;white-space:pre}
+body.light .sig-line{background:#ebebf3}
+.src-link{font-size:12px;color:var(--muted);margin-top:12px}
+.src-link a{color:var(--purple);text-decoration:none}
+.src-link a:hover{text-decoration:underline}
+.breadcrumb-title{display:flex;align-items:center;gap:8px;font-size:26px;font-weight:700;color:var(--purple3);margin-bottom:8px}
+.breadcrumb-title a{color:inherit;text-decoration:none}
+.crumb-sep{color:var(--muted);font-weight:400}
+details.wiki-src{margin-top:12px}
+details.wiki-src summary{cursor:pointer;font-size:12px;color:var(--muted)}
+details.wiki-src pre{background:#0d0d14;border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-top:8px;overflow-x:auto}
+body.light details.wiki-src pre{background:#ebebf3}
+details.wiki-src code{font-family:'Consolas',monospace;font-size:12px;color:var(--green);line-height:1.55}
+</style>
+</head><body>
+<div id="app">
+<header id="topbar">
+  <button id="hamburger" aria-label="Toggle sidebar">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+  <a id="logo" href="?"><span id="logo-label">Wiki</span></a>
+  <div id="search-wrap">
+    <svg id="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+    </svg>
+    <input id="search" type="text" placeholder="Search files, classes and functions…" autocomplete="off" spellcheck="false">
+    <div id="search-results"></div>
+  </div>
+  <button id="theme-toggle" aria-label="Toggle theme">
+    <svg id="theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg id="theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+<aside id="sidebar">
+  <div id="file-panel">
+    <div id="sidebar-header">Files</div>
+    <nav id="file-tree"></nav>
+  </div>
+  <div id="sym-panel">
+    <div id="method-header">Symbols</div>
+    <nav id="sym-list"></nav>
+  </div>
+</aside>
+<div id="sidebar-overlay"></div>
+<main id="main"><section id="content"></section></main>
+</div>
+<footer id="foot"><span>Pages for entries marked ★ are prose generated by FOOT_MODEL.</span><span>Generated FOOT_GENERATED · © FOOT_YEAR MODULE_NAME</span></footer>
+<script>
+const W=WIKI_PLACEHOLDER,SRC_BASE="SRC_BASE_PLACEHOLDER";
+const E=[];
+W.files.forEach(f=>f.entries.forEach(e=>{e.file=f.path;E.push(e);}));
+const content=document.getElementById("content"),treeBox=document.getElementById("file-tree"),
+ mHeader=document.getElementById("method-header"),mList=document.getElementById("sym-list"),
+ q=document.getElementById("search"),res=document.getElementById("search-results"),
+ app=document.getElementById("app");
+document.getElementById("logo-label").textContent=W.module+" wiki";
+const params=new URLSearchParams(location.search);
+let curFile=params.get("file"),target=params.get("fn");
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function fmt(s){let h=esc(s||"");
+ h=h.replace(/`([^`]+)`/g,'<code class="inline-code">$1</code>');
+ h=h.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>");
+ return h.replace(/\n/g,"<br>");}
+function mdBlocks(s,cls){
+ const wrap=document.createElement("div");if(cls)wrap.className=cls;
+ let ul=null,code=null,table=null;
+ function flushTable(){
+  if(!table)return;
+  const all=table;table=null;
+  if(all.length<2)return;
+  const cells=r=>r.replace(/^\s*\|/,"").replace(/\|\s*$/,"").split("|").map(c=>c.trim());
+  const isSep=r=>{const cs=cells(r).filter(c=>c!=="");return cs.length>0&&cs.every(c=>/^:?-+:?$/.test(c));};
+  let bodyRows=all.slice(1);
+  const head=cells(all[0]);
+  if(bodyRows.length&&isSep(bodyRows[0]))bodyRows=bodyRows.slice(1);
+  const t=document.createElement("table");t.className="wiki-table";
+  const thead=document.createElement("thead"),htr=document.createElement("tr");
+  head.forEach(h=>{const th=document.createElement("th");th.innerHTML=fmt(h);htr.appendChild(th);});
+  thead.appendChild(htr);t.appendChild(thead);
+  const tb=document.createElement("tbody");
+  bodyRows.forEach(r=>{const tr=document.createElement("tr");cells(r).forEach(c=>{const td=document.createElement("td");td.innerHTML=fmt(c);tr.appendChild(td);});tb.appendChild(tr);});
+  t.appendChild(tb);wrap.appendChild(t);}
+ (s||"").split("\n").forEach(raw=>{
+  const fence=raw.match(/^\s*```/);
+  if(fence){flushTable();if(code){code.textContent=code.textContent.replace(/\n$/,"");code=null;}
+   else{ul=null;const pre=document.createElement("pre");pre.className="wiki-code";
+    const c=document.createElement("code");pre.appendChild(c);wrap.appendChild(pre);code=c;}
+   return;}
+  if(code!==null){code.textContent+=raw+"\n";return;}
+  const ln=raw.replace(/\s+$/,"");
+  if(/^\s*\|.*\|\s*$/.test(ln)){ul=null;table||(table=[]);table.push(ln);return;}
+  flushTable();
+  if(!ln.trim()){ul=null;return;}
+  let m=ln.match(/^(#{1,4})\s+(.*)$/);
+  if(m){ul=null;const lvl=Math.min(m[1].length+1,6);const h=document.createElement("h"+lvl);h.innerHTML=fmt(m[2]);wrap.appendChild(h);return;}
+  m=ln.match(/^\s*[-*]\s+(.*)$/);
+  if(m){if(!ul){ul=document.createElement("ul");wrap.appendChild(ul);}const li=document.createElement("li");li.innerHTML=fmt(m[1]);ul.appendChild(li);return;}
+  ul=null;const p=document.createElement("p");p.innerHTML=fmt(ln);wrap.appendChild(p);});
+ flushTable();
+ return wrap;}
+function base(p){return p.split("/").pop();}
+function ext(p){const m=p.match(/\.(\w+)$/);return m?m[1]:"";}
+function isPending(d){return d&&!d.ai;}
+function sigText(e){return e.sig||e.name;}
+/* ---- file tree ---- */
+const filePaths=W.files.map(f=>f.path);
+function buildTree(){
+ const root={dirs:{},files:[]};
+ filePaths.forEach(p=>{const parts=p.split("/");let n=root;
+  for(let i=0;i<parts.length-1;i++){n.dirs[parts[i]]||(n.dirs[parts[i]]={dirs:{},files:[]});n=n.dirs[parts[i]];}
+  n.files.push(p);});
+ return root;}
+function countIn(dir){let c=0;Object.values(dir.dirs).forEach(d=>c+=countIn(d));dir.files.forEach(f=>c+=(W.files.find(x=>x.path===f).entries.length));return c;}
+let collapsed={};try{collapsed=JSON.parse(localStorage.getItem("ygg-wiki-tree")||"{}");}catch(e){collapsed={};}
+function saveCollapsed(){try{localStorage.setItem("ygg-wiki-tree",JSON.stringify(collapsed));}catch(e){}}
+function renderTree(){
+ treeBox.innerHTML="";
+ const tree=buildTree();
+ function node(box,obj,depth){
+  Object.keys(obj.dirs).sort().forEach(name=>{
+   const d=obj.dirs[name];
+   const n=document.createElement("div");n.className="tree-node";n.style.paddingLeft=(8+depth*14)+"px";
+   const ar=document.createElement("span");ar.className="tree-arrow";
+   ar.textContent=collapsed[name]?"▸":"▾";
+   ar.onclick=()=>{collapsed[name]=!collapsed[name];saveCollapsed();renderTree();};
+   n.appendChild(ar);
+   const lb=document.createElement("span");lb.className="tree-link";lb.style.cursor="pointer";lb.textContent=name;
+   n.appendChild(lb);
+   const ct=document.createElement("span");ct.className="class-count";ct.textContent=countIn(d);n.appendChild(ct);
+   box.appendChild(n);
+   if(!collapsed[name])node(box,d,depth+1);});
+  obj.files.sort().forEach(p=>{
+   const n=document.createElement("div");n.className="tree-node";n.style.paddingLeft=(8+depth*14)+"px";
+   const sp=document.createElement("span");sp.className="tree-indent";n.appendChild(sp);
+   const a=document.createElement("a");a.className="tree-link"+(p===curFile?" active":"");
+   a.href="?file="+encodeURIComponent(p);a.textContent=base(p);n.appendChild(a);
+   const k=document.createElement("span");k.className="file-kind";k.textContent=ext(p);n.appendChild(k);
+   box.appendChild(n);});}
+ node(treeBox,tree,0);}
+/* ---- symbol list ---- */
+function entriesFor(p){const f=W.files.find(x=>x.path===p);return f?f.entries:[];}
+function renderSymbols(){
+ mList.innerHTML="";
+ const list=curFile?entriesFor(curFile):E.slice().sort((a,b)=>a.name.localeCompare(b.name));
+ mHeader.textContent=curFile?base(curFile)+" ("+list.length+")":"All symbols ("+list.length+")";
+ list.forEach(e=>{
+  const a=document.createElement("a");
+  a.className="method-item"+(e.file===curFile&&e.name===target?" active":"");
+  a.href="?file="+encodeURIComponent(e.file)+"&fn="+encodeURIComponent(e.name);
+  const dot=document.createElement("span");dot.className="own-dot";a.appendChild(dot);
+  const nm=document.createElement("span");nm.textContent=e.name;a.appendChild(nm);
+  const kd=document.createElement("span");kd.className="class-count";kd.textContent=e.kind;kd.style.marginLeft="auto";a.appendChild(kd);
+  mList.appendChild(a);});}
+/* ---- cards ---- */
+function srcLink(e){
+ const w=document.createElement("div");w.className="src-link";
+ if(SRC_BASE){const a=document.createElement("a");a.href=SRC_BASE+e.file+"#L"+e.line;a.textContent=e.file+":"+e.line;a.target="_blank";a.rel="noopener";w.appendChild(a);}
+ else w.textContent=e.file+":"+e.line;
+ return w;}
+function card(e,showTitle){
+ const d=document.createElement("div");d.className="method-card";d.id="m-"+e.name;
+ if(showTitle!==false){
+  const t=document.createElement("div");t.className="method-name";t.textContent=(e.qualifier?e.qualifier+"::":"")+e.name;
+  if(e.doc&&e.doc.ai){const s=document.createElement("span");s.className="star";s.textContent="★";t.appendChild(s);}
+  const kd=document.createElement("span");kd.className="method-inherited-badge";kd.textContent=e.kind;t.appendChild(kd);
+  d.appendChild(t);}
+ const sl=document.createElement("div");sl.className="sig-line";sl.textContent=sigText(e);d.appendChild(sl);
+ const doc=e.doc||{};
+ const body=document.createElement("div");body.className="wiki-doc";
+ const summary=document.createElement("p");if(isPending(doc))summary.className="pending";summary.innerHTML=fmt(doc.summary||"(not yet generated)");body.appendChild(summary);
+ if(doc.overview){const p=document.createElement("p");p.innerHTML=fmt(doc.overview);body.appendChild(p);}
+ const prm=(doc.params||[]).filter(p=>p.name||p.desc);
+ if(prm.length){const h=document.createElement("h3");h.textContent="Parameters";body.appendChild(h);
+  prm.forEach(p=>{const r=document.createElement("div");r.className="wiki-param";
+   const nm=document.createElement("span");nm.className="pn";nm.textContent=p.name||"?";r.appendChild(nm);
+   const tp=(e.params||[]).find(x=>x.name===p.name);
+   if(tp&&tp.type){const t=document.createElement("span");t.className="pt";t.textContent=tp.type;r.appendChild(t);}
+   const ds=document.createElement("span");ds.className="pd";ds.innerHTML=fmt(p.desc||"");r.appendChild(ds);body.appendChild(r);});}
+ if(doc.returns){const h=document.createElement("h3");h.textContent="Returns";body.appendChild(h);
+  const p=document.createElement("p");p.innerHTML=fmt(doc.returns);body.appendChild(p);}
+ if(doc.side_effects){const h=document.createElement("h3");h.textContent="Side effects";body.appendChild(h);
+  const p=document.createElement("p");p.innerHTML=fmt(doc.side_effects);body.appendChild(p);}
+ if(doc.notes){const h=document.createElement("h3");h.textContent="Notes";body.appendChild(h);
+  const p=document.createElement("p");p.innerHTML=fmt(doc.notes);body.appendChild(p);}
+ d.appendChild(body);
+ if(e.body){const det=document.createElement("details");det.className="wiki-src";
+  const sm=document.createElement("summary");sm.textContent="Source";det.appendChild(sm);
+  const pre=document.createElement("pre");const code=document.createElement("code");code.textContent=e.body.trim();pre.appendChild(code);det.appendChild(pre);d.appendChild(det);}
+ d.appendChild(srcLink(e));
+ return d;}
+/* ---- views ---- */
+function renderHome(){
+ content.innerHTML="";
+ const ov=W.overview||{};
+ const w=document.createElement("div");w.className="hero";
+ const im=document.createElement("img");im.src="logo.png";im.alt=W.module;im.onerror=()=>im.remove();w.appendChild(im);
+ const k=document.createElement("div");k.className="eyebrow";k.textContent="Module wiki";w.appendChild(k);
+ const h=document.createElement("h1");h.textContent=W.module;w.appendChild(h);
+ const tag=document.createElement("p");tag.className="tagline";
+ if(!ov.ai)tag.className+=" pending";
+ tag.textContent=ov.summary||"A per-file, per-function wiki generated from the module sources.";w.appendChild(tag);
+ const st=document.createElement("div");st.className="stat-row";
+ const docd=E.filter(e=>e.doc&&e.doc.ai).length;
+ [["Files",W.files.length],["Entries",E.length],["Generated",docd]].forEach(s=>{
+  const d=document.createElement("div");d.className="stat";const b=document.createElement("b");b.textContent=s[1];d.appendChild(b);
+  const sp=document.createElement("span");sp.textContent=s[0];d.appendChild(sp);st.appendChild(d);});
+ w.appendChild(st);
+ const links=document.createElement("p");links.className="home-links";
+ const repo=SRC_BASE?SRC_BASE.replace(/\/blob\/.*$/,""):"";
+ if(repo){const a=document.createElement("a");a.href=repo;a.textContent="Source repository";links.appendChild(a);}
+ const a2=document.createElement("a");a2.href="?file="+encodeURIComponent(W.files[0]?W.files[0].path:"");a2.textContent="Browse files";if(repo)links.appendChild(document.createTextNode(" · "));links.appendChild(a2);
+ w.appendChild(links);
+ content.appendChild(w);
+ if(ov.body)content.appendChild(mdBlocks(ov.body,"home-overview"));}
+function renderFile(){
+ content.innerHTML="";
+ const list=entriesFor(curFile);
+ const bc=document.createElement("div");bc.className="breadcrumb breadcrumb-title";
+ const a=document.createElement("a");a.href="?";a.textContent=W.module;bc.appendChild(a);
+ const sep=document.createElement("span");sep.className="crumb-sep";sep.textContent="›";bc.appendChild(sep);
+ const nm=document.createElement("span");nm.textContent=curFile;bc.appendChild(nm);
+ content.appendChild(bc);
+ const bar=document.createElement("div");bar.className="method-count-bar";
+ bar.innerHTML='<div class="mcb-item"><span class="mcb-dot-own"></span>'+list.length+' definitions in file</div>';
+ content.appendChild(bar);
+ list.forEach(e=>content.appendChild(card(e,true)));}
+function renderFunction(){
+ content.innerHTML="";
+ const e=E.find(x=>x.file===curFile&&x.name===target)||E.find(x=>x.name===target);
+ const bc=document.createElement("div");bc.className="breadcrumb breadcrumb-title";
+ const a=document.createElement("a");a.href="?file="+encodeURIComponent(e?e.file:curFile);a.textContent=e?base(e.file):curFile;bc.appendChild(a);
+ const sep=document.createElement("span");sep.className="crumb-sep";sep.textContent="›";bc.appendChild(sep);
+ const nm=document.createElement("span");nm.textContent=target;bc.appendChild(nm);
+ content.appendChild(bc);
+ const wrap=document.createElement("div");wrap.id="current-method";
+ if(e)wrap.appendChild(card(e,true));
+ else{const p=document.createElement("p");p.textContent="Entry not found.";wrap.appendChild(p);}
+ content.appendChild(wrap);}
+function render(){
+ renderTree();renderSymbols();
+ if(!curFile&&!target)renderHome();
+ else if(target)renderFunction();
+ else if(curFile)renderFile();
+ else renderHome();}
+/* sidebar + theme */
+const sidebar=document.getElementById("sidebar"),overlay=document.getElementById("sidebar-overlay");
+const desktop=()=>window.matchMedia("(min-width: 901px)").matches;
+function setCollapsed(c){app.classList.toggle("sidebar-collapsed",c);try{localStorage.setItem("ygg-wiki-sb",c?"1":"0");}catch(e){}}
+document.getElementById("hamburger").onclick=()=>{
+ if(desktop())setCollapsed(!app.classList.contains("sidebar-collapsed"));
+ else{const o=!sidebar.classList.contains("open");sidebar.classList.toggle("open",o);overlay.classList.toggle("open",o);}};
+overlay.onclick=()=>{sidebar.classList.remove("open");overlay.classList.remove("open");};
+window.addEventListener("resize",()=>{if(!desktop()&&app.classList.contains("sidebar-collapsed"))setCollapsed(false);});
+try{if(localStorage.getItem("ygg-wiki-sb")==="1"&&desktop())setCollapsed(true);}catch(e){}
+const tBtn=document.getElementById("theme-toggle"),tSun=document.getElementById("theme-icon-sun"),tMoon=document.getElementById("theme-icon-moon");
+function setTheme(light){document.body.classList.toggle("light",light);tSun.style.display=light?"none":"";tMoon.style.display=light?"":"none";try{localStorage.setItem("theme",light?"light":"dark");}catch(e){}}
+try{setTheme(localStorage.getItem("theme")==="light");}catch(e){}
+tBtn.onclick=()=>setTheme(!document.body.classList.contains("light"));
+/* search */
+q.addEventListener("input",()=>{
+ const v=q.value.trim().toLowerCase();
+ if(!v){res.classList.remove("open");res.innerHTML="";return;}
+ const fh=filePaths.filter(p=>p.toLowerCase().includes(v)).slice(0,6).map(p=>({t:"file",f:p,n:p,d:""}));
+ const sh=E.filter(e=>(e.file+"::"+e.name).toLowerCase().includes(v)||(e.doc&&e.doc.summary&&e.doc.summary.toLowerCase().includes(v))).slice(0,25)
+  .map(e=>({t:e.kind,f:e.file,n:e.name,d:e.doc&&e.doc.summary}));
+ const hits=fh.concat(sh);
+ if(!hits.length){res.classList.remove("open");res.innerHTML="";return;}
+ res.innerHTML="";
+ hits.forEach(x=>{
+  const d=document.createElement("div");d.className="sr-item";
+  const bg=document.createElement("span");bg.className="sr-badge "+x.t;bg.textContent=x.t;d.appendChild(bg);
+  const t=document.createElement("div");
+  const nm=document.createElement("span");nm.className="sr-name";nm.textContent=x.n;t.appendChild(nm);
+  const cl=document.createElement("span");cl.className="sr-class";cl.textContent="  "+(x.t==="file"?"":x.f);t.appendChild(cl);
+  d.appendChild(t);
+  if(x.d){const ds=document.createElement("span");ds.className="sr-desc";ds.textContent=x.d;t.appendChild(ds);}
+  d.onclick=()=>{res.classList.remove("open");q.value="";
+   location.href=x.t==="file"?"?file="+encodeURIComponent(x.f):"?file="+encodeURIComponent(x.f)+"&fn="+encodeURIComponent(x.n);};
+  res.appendChild(d);});
+ res.classList.add("open");});
+document.addEventListener("click",e=>{if(!q.contains(e.target)&&!res.contains(e.target))res.classList.remove("open");});
+q.addEventListener("keydown",e=>{if(e.key==="Escape"){res.classList.remove("open");q.blur();}});
+render();
+</script></body></html>
