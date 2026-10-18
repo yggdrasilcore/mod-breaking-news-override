@@ -113,7 +113,7 @@ void LoadBreakingNews()
     std::lock_guard<std::mutex> lock(bn_Mutex);
     bn_Title = title;
     bn_Body = body;
-    bn_Formatted = Acore::StringFormat(_midPayloadFmt, bn_Title, bn_Body);
+    bn_Formatted = Ycore::StringFormat(_midPayloadFmt, bn_Title, bn_Body);
 }
 
 bool BreakingNewsServerScript::CanPacketSend(WorldSession* session, WorldPacket& packet)
