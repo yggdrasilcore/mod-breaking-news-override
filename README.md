@@ -1,53 +1,74 @@
-# ![logo](https://raw.githubusercontent.com/azerothcore/azerothcore.github.io/master/images/logo-github.png) AzerothCore
+<p align="center">
+  <img alt="Yggdrasilcore" src="https://github.com/user-attachments/assets/6f96adf9-1867-4ca6-b627-1bd0ab7ee494" />
+</p>
 
 # Breaking News Override
 
-- Latest build status with azerothcore:
+`mod-breaking-news-override` is a [Yggdrasilcore](https://github.com/yggdrasilcore/yggdrasilcore) module that shows the Breaking News frame on the left side of the character-selection screen. It is a Yggdrasilcore-compatible fork of AzerothCore's [mod-breaking-news-override](https://github.com/azerothcore/mod-breaking-news-override).
 
-[![Build Status](https://github.com/azerothcore/mod-breaking-news-override/workflows/core-build/badge.svg?branch=master&event=push)](https://github.com/azerothcore/mod-breaking-news-override)
+The module uses the Warden Payload Manager to push an HTML body you define to the client, which then renders it on the character-selection screen. Point it at an HTML file in the configuration and the client picks it up on login.
 
-![WoWScrnShot_031224_001040](https://github.com/azerothcore/mod-breaking-news-override/assets/2810187/9b7a8b74-4a55-4b00-9732-39695179bddd)
+<p align="center">
+  <a href="https://github.com/yggdrasilcore/mod-breaking-news-override/actions/workflows/core-build.yml"><img src="https://github.com/yggdrasilcore/mod-breaking-news-override/actions/workflows/core-build.yml/badge.svg" alt="Build"></a>
+</p>
 
-![WoWScrnShot_031224_001046](https://github.com/azerothcore/mod-breaking-news-override/assets/2810187/4aed246d-c954-417e-8b91-fa1dd442a700)
+Read more about Yggdrasil WoW and see Yggdrasilcore in action [here](https://yggdrasilwow.com/).
 
-This module utilizes the Warden Payload Manager to enable the Breaking News frame on the left side of the character selection screen.
+## Setup
 
-You can feed it a html file defined in the config to use it.
+1. Create an HTML file containing the body of your breaking-news frame.
+2. Point the module at it in `conf/breakingnews.conf.dist`:
 
-# Setup
+   ```
+   BreakingNews.Enable = 1
+   BreakingNews.Title = "Breaking News"
+   BreakingNews.HtmlPath = "./breakingnews.html"
+   BreakingNews.Cache = 1
+   BreakingNews.Verbose = 0
+   ```
 
-- Create a html file which contains the body for your breaking news frame.
-- Set the path to the html file in the config.
-- Enable the module and login to verify it works.
+3. Enable the module and log in to verify it works.
 
-# How to generate the image file
+Example body:
 
 ```html
 <html>
 <body>
-    <p>|cffFF6F51 The AzerothCore Team and Owners DO NOT in any case sponsor nor support illegal public servers. If you use these projects to run an illegal public server and not for testing and learning it is your personal choice.|r</p>
-    <br/>
-    <p>We have an active community of developers, contributors, and users who collaborate, share knowledge, and provide support through forums, Discord channels, and other communication platforms. If you want to contribute, we\'d love to!</p>
-    <br/>
-    <p>Is designed to be highly modular, allowing developers to extend and customize the game to suit their preferences or create unique gameplay experiences. This flexibility enables the addition of custom features, content, and modifications.</p>
+    <p>Welcome to Yggdrasil WoW!</p>
 </body>
 </html>
 ```
 
-- `BreakingNews.Enable = 1`
-- `BreakingNews.Title = "AzerothCore"`
-- `BreakingNews.HtmlPath = "./breakingnews.html"`
-- `BreakingNews.Cache = 1`
-- `BreakingNews.Verbose = 0`
+## Notes
 
-![image](https://github.com/azerothcore/mod-breaking-news-override/assets/2810187/b6a3c52d-79fd-4687-bbea-35a8ba43cbb5)
+- Only a small subset of HTML tags is supported by the client. See the [SimpleHTML reference](https://wowwiki-archive.fandom.com/wiki/UIOBJECT_SimpleHTML).
+- The characters `[`, `]`, `'` and `\` must be escaped in the title and body because of the way the payload is sent. For example: `\'You think this hurts? Just wait.\'`
 
-# Notes
+## What we changed
 
-- There is a small amount of html tags that are actually compatible, follow this guide here: https://wowwiki-archive.fandom.com/wiki/UIOBJECT_SimpleHTML
-- You must escape the characters `[`, `]`, `'`, `\` in your title and html file because of the way the payload is sent.
-- Example: `\'You think this hurts? Just wait.\'`
+- Thread safety: the shared breaking-news payload cache (enabled flag, title, body and formatted payload) is now guarded by a mutex, since it is read on every character-enum packet across session threads and written on config reload.
+- Build: Ubuntu 24.04 CI against Yggdrasilcore.
+- Generated documentation for the module source.
 
-# Credits
+## Documentation
 
-Thanks to the AzerothCore community and Foe especially for getting this to work.
+- [Generated module documentation](https://yggdrasilcore.github.io/mod-breaking-news-override/)
+- [AzerothCore installation guide](https://www.azerothcore.org/wiki/installation)
+
+## Support
+
+This module is a downstream fork and we do not provide official public support for it, and upstream channels do not support fork-specific behaviour. If you use it and find a bug, feel free to open an issue or a pull request here.
+
+## Contributing
+
+This repository is privately managed. We do not recommend that emulation enthusiasts follow it. Instead, we recommend that enthusiasts contribute to the upstream [mod-breaking-news-override](https://github.com/azerothcore/mod-breaking-news-override) project and to [AzerothCore](https://github.com/azerothcore/azerothcore-wotlk).
+
+## Acknowledgements
+
+- [azerothcore/mod-breaking-news-override](https://github.com/azerothcore/mod-breaking-news-override)
+- The AzerothCore community, and Foe in particular.
+
+## License
+
+- Source: This repository is distributed under the MIT License.
+- Intellectual property: Yggdrasil WoW and its derivative projects are not related to Blizzard Entertainment and lay no claim to Blizzard Entertainment's copyrights or intellectual property. They operate solely as an avenue for exploring the functionality of the abandonware WotLK 3.3.5a client in an educational capacity.

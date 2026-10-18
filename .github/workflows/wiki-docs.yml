@@ -1,0 +1,91 @@
+name: wiki-docs
+
+# Module wiki. The code branch is read-only; the generator, template, ground
+# truth and hash cache live on the `docs` branch. This file must live on the
+# default branch to run.
+#
+# - Ollama + 4B model on the runner (CPU, no keys, no GPU).
+# - Incremental over the hash cache on the docs branch (limit caps LLM calls).
+
+on:
+  push:
+    branches: ['*master*']
+    paths: ["src/**", "conf/**"]
+  schedule: [{cron: "0 4 * * *"}]
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Ollama model
+        default: qwen3.5:4b
+        required: false
+      limit:
+        description: Max new LLM calls (0 = unlimited)
+        default: "200"
+        required: false
+
+permissions:
+  contents: write # push the cache back to the docs branch (never the code branch)
+  pages: write
+  id-token: write
+
+concurrency:
+  group: wiki-docs
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out code (read-only)
+        uses: actions/checkout@v4
+        with: {fetch-depth: 50}
+
+      - name: Check out docs branch (script + cache)
+        uses: actions/checkout@v4
+        with: {ref: docs, path: site}
+
+      - name: Install Ollama
+        run: curl -fsSL https://ollama.com/install.sh | sh
+
+      - name: Start Ollama
+        run: |
+          (ollama serve &>/tmp/ollama.log &)
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:11434/api/tags >/dev/null && break
+            sleep 1
+          done
+
+      - name: Pull model
+        run: ollama pull "${{ inputs.model || 'qwen3.5:4b' }}"
+
+      - name: Generate wiki
+        run: |
+          ARGS="--root . --scope src --cache site/docs/wiki-cache.json --out site/docs/dist --model ${{ inputs.model || 'qwen3.5:4b' }}"
+          if [ "${{ inputs.limit || '200' }}" != "0" ]; then
+            ARGS="$ARGS --limit ${{ inputs.limit || '200' }}"
+          fi
+          python3 site/docs/gen_wiki.py $ARGS
+
+      # Best-effort: if docs advanced during this run the push is rejected and
+      # the cache is simply regenerated on the next scheduled run. It must not
+      # fail the job or skip the Pages deploy.
+      - name: Commit cache back to docs branch
+        continue-on-error: true
+        run: |
+          cd site
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/wiki-cache.json
+          if git diff --cached --quiet; then
+            echo "No cache changes"
+          else
+            git commit -m "wiki-docs: refresh cache [skip ci]"
+            git push origin docs
+          fi
+
+      - uses: actions/upload-pages-artifact@v3
+        with: {path: site/docs/dist}
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
