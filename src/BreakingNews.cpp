@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-AGPL3
+ * Copyright (C) 2016+ YggdrasilCore <yggdrasilcore.github.io>, released under GNU AGPL v3 license: https://github.com/yggdrasilcore/yggdrasilcore/blob/master/LICENSE
  */
 
 #include "BreakingNews.h"
@@ -113,7 +113,7 @@ void LoadBreakingNews()
     std::lock_guard<std::mutex> lock(bn_Mutex);
     bn_Title = title;
     bn_Body = body;
-    bn_Formatted = Acore::StringFormat(_midPayloadFmt, bn_Title, bn_Body);
+    bn_Formatted = Ycore::StringFormat(_midPayloadFmt, bn_Title, bn_Body);
 }
 
 bool BreakingNewsServerScript::CanPacketSend(WorldSession* session, WorldPacket& packet)
