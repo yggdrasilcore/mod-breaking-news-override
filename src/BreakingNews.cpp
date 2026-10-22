@@ -4,11 +4,40 @@
 
 #include "BreakingNews.h"
 
+#include <cstdio>
 #include <mutex>
 
 // Guards bn_Enabled/bn_Title/bn_Body/bn_Formatted: read on every
 // char-enum packet (session threads), written on config reload.
 static std::mutex bn_Mutex;
+
+static std::string EscapeLuaString(std::string const& value, char quote)
+{
+    std::string out;
+    out.reserve(value.size());
+
+    for (char c : value)
+    {
+        unsigned char byte = static_cast<unsigned char>(c);
+        if (c == '\\' || c == quote)
+        {
+            out.push_back('\\');
+            out.push_back(c);
+        }
+        else if (byte < 0x20 || byte == 0x7F)
+        {
+            char escape[8];
+            std::snprintf(escape, sizeof(escape), "\\%03u", static_cast<unsigned>(byte));
+            out += escape;
+        }
+        else
+        {
+            out.push_back(c);
+        }
+    }
+
+    return out;
+}
 
 bool TryReadFile(std::string& path, std::string& bn_Result)
 {
@@ -79,7 +108,7 @@ void BreakingNewsServerScript::SendChunkedPayload(Warden* warden, WardenPayloadM
 
     for (auto const& chunk : chunks)
     {
-        auto smallPayload = "wlbuf = wlbuf .. [[" + chunk + "]];";
+        auto smallPayload = "wlbuf = wlbuf .. \"" + EscapeLuaString(chunk, '"') + "\";";
     
         payloadMgr->RegisterPayload(smallPayload, _tmpPayloadId, true);
         payloadMgr->QueuePayload(_tmpPayloadId);
@@ -113,7 +142,9 @@ void LoadBreakingNews()
     std::lock_guard<std::mutex> lock(bn_Mutex);
     bn_Title = title;
     bn_Body = body;
-    bn_Formatted = Ycore::StringFormat(_midPayloadFmt, bn_Title, bn_Body);
+    bn_Formatted = Ycore::StringFormat(_midPayloadFmt,
+        EscapeLuaString(bn_Title, '\''),
+        EscapeLuaString(bn_Body, '\''));
 }
 
 bool BreakingNewsServerScript::CanPacketSend(WorldSession* session, WorldPacket& packet)
@@ -146,9 +177,6 @@ bool BreakingNewsServerScript::CanPacketSend(WorldSession* session, WorldPacket&
         auto payloadMgr = warden->GetPayloadMgr();
         if (!payloadMgr)
             return true;
-
-        // Just in-case there are some payloads in the queue, we don't want to send the incorrect payload.
-        payloadMgr->ClearQueuedPayloads();
 
         // Load in the updated news into the cache.
         if (!sConfigMgr->GetOption<bool>("BreakingNews.Cache", false))
