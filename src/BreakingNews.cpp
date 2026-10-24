@@ -218,6 +218,27 @@ void BreakingNewsServerScript::SendChunkedPayload(Warden* warden, WardenPayloadM
         ++chunkIndex;
     }
 
+        if (smallPayload.size() > 255)
+        {
+            LOG_ERROR("module", "Breaking news chunk {} is too large ({} bytes).", chunkIndex, smallPayload.size());
+            return;
+        }
+
+        if (!payloadMgr->RegisterPayload(smallPayload, chunkId, true))
+        {
+            LOG_ERROR("module", "Failed to register breaking news chunk {}.", chunkIndex);
+            return;
+        }
+
+        payloadMgr->QueuePayload(chunkId, true);
+
+        if (verbose)
+            LOG_INFO("module", "Queued mid-payload '{}'.", smallPayload);
+
+        ++chunkId;
+        ++chunkIndex;
+    }
+
     if (!payloadMgr->RegisterPayload(postPayload, _postPayloadId, true))
     {
         LOG_ERROR("module", "Failed to register breaking news post-payload.");
