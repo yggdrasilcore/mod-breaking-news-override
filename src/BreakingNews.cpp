@@ -197,12 +197,6 @@ void BreakingNewsServerScript::SendChunkedPayload(Warden* warden, WardenPayloadM
             "if type(wlbuf)~='table'then wlbuf={}end;wlbuf[" + genStr + "]=wlbuf[" + genStr + "]or{};wlbuf[" +
             genStr + "][" + std::to_string(chunkIndex) + "]=\"" + EscapeLuaString(chunk, '"') + "\";";
 
-        if (smallPayload.size() > 255)
-        {
-            LOG_ERROR("module", "Breaking news chunk {} is too large ({} bytes).", chunkIndex, smallPayload.size());
-            return;
-        }
-
         if (!payloadMgr->RegisterPayload(smallPayload, chunkId, true))
         {
             LOG_ERROR("module", "Failed to register breaking news chunk {}.", chunkIndex);
@@ -268,11 +262,6 @@ bool BreakingNewsServerScript::CanPacketSend(WorldSession* session, WorldPacket&
     {
         WardenWin* warden = (WardenWin*)session->GetWarden();
         if (!warden)
-            return true;
-
-        // Trying to use Warden before it has initialized,
-        // so we exit.
-        if (!warden->IsInitialized())
             return true;
 
         if (formatted == "")
