@@ -120,10 +120,10 @@
   "model": "qwen3.5:4b"
  },
  "src/BreakingNews.cpp::CanPacketSend@795198f3:qwen3-5-4b": {
-  "hash": "44190da26eb1",
+  "hash": "55cdedc43a94",
   "doc": {
    "summary": "Checks if a packet should be sent based on BreakingNews configuration and session state.",
-   "overview": "This function determines whether to process a specific packet by first verifying global BreakingNews settings. If the feature is disabled, it immediately returns true without further checks. For character enumeration packets, it validates that the session has an initialized Warden instance with a configured payload before proceeding.",
+   "overview": "This function determines whether to process a specific packet for the BreakingNews feature by first verifying global enablement. If enabled, it specifically handles character enumeration packets by retrieving the associated Warden instance and loading cached news data before sending the payload.",
    "params": [
     {
      "name": "session",
@@ -131,15 +131,15 @@
     },
     {
      "name": "packet",
-     "desc": "Reference to the WorldPacket object being evaluated for sending."
+     "desc": "Reference to the WorldPacket object being evaluated for processing."
     }
    ],
    "returns": "bool",
    "side_effects": "Network (via SendChunkedPayload), Global State (LoadBreakingNews)",
-   "notes": "Callers should ensure session validity before invoking. Returns true regardless of whether the packet was actually sent, indicating permission to proceed.",
+   "notes": "Returns true immediately if BreakingNews is disabled, the packet opcode is not SMSG_CHAR_ENUM, or the Warden/PayloadMgr is unavailable.",
    "ai": true
   },
-  "raw": "{\n  \"summary\": \"Checks if a packet should be sent based on BreakingNews configuration and session state.\",\n  \"overview\": \"This function determines whether to process a specific packet by first verifying global BreakingNews settings. If the feature is disabled, it immediately returns true without further checks. For character enumeration packets, it validates that the session has an initialized Warden instance with a configured payload before proceeding.\",\n  \"params\": [\n    {\n      \"name\": \"session\",\n      \"desc\": \"Pointer to the WorldSession object representing the client connection.\"\n    },\n    {\n      \"name\": \"packet\",\n      \"desc\": \"Reference to the WorldPacket object being evaluated for sending.\"\n    }\n  ],\n  \"returns\": \"bool\",\n  \"side_effects\": \"Network (via SendChunkedPayload), Global State (LoadBreakingNews)\",\n  \"notes\": \"Callers should ensure session validity before invoking. Returns true regardless of whether the packet was actually sent, indicating permission to proceed.\"\n}",
+  "raw": "{\n  \"summary\": \"Checks if a packet should be sent based on BreakingNews configuration and session state.\",\n  \"overview\": \"This function determines whether to process a specific packet for the BreakingNews feature by first verifying global enablement. If enabled, it specifically handles character enumeration packets by retrieving the associated Warden instance and loading cached news data before sending the payload.\",\n  \"params\": [\n    {\n      \"name\": \"session\",\n      \"desc\": \"Pointer to the WorldSession object representing the client connection.\"\n    },\n    {\n      \"name\": \"packet\",\n      \"desc\": \"Reference to the WorldPacket object being evaluated for processing.\"\n    }\n  ],\n  \"returns\": \"bool\",\n  \"side_effects\": \"Network (via SendChunkedPayload), Global State (LoadBreakingNews)\",\n  \"notes\": \"Returns true immediately if BreakingNews is disabled, the packet opcode is not SMSG_CHAR_ENUM, or the Warden/PayloadMgr is unavailable.\"\n}",
   "model": "qwen3.5:4b"
  },
  "src/BreakingNews.cpp::OnAfterConfigLoad@d8ef3d99:qwen3-5-4b": {
@@ -289,30 +289,30 @@
   "model": "qwen3.5:4b"
  },
  "src/BreakingNews.cpp::SendChunkedPayload@6c1f7130:qwen3-5-4b": {
-  "hash": "5e6f8be99370",
+  "hash": "5000b0a84092",
   "doc": {
-   "summary": "Splits a Lua payload into size-constrained chunks and registers them as queued payloads for a specific warden.",
-   "overview": "This function divides an incoming string payload into smaller, escaped chunks to ensure each fits within Lua's table size limits. It generates unique pre- and post-processing scripts that handle the assembly of these chunks on the client side before executing the final result. The function registers all generated payloads with the provided manager and queues them for execution.",
+   "summary": "Splits a Lua payload into configurable chunks and registers them as queued payloads to safely deliver breaking news updates.",
+   "overview": "This function takes a raw payload string, divides it into smaller Lua-compatible chunks based on size constraints, and registers each chunk along with pre- and post-processing logic via the payload manager. It ensures that the total number of chunks does not exceed a configured maximum while dynamically adjusting chunk sizes if necessary to fit within limits.",
    "params": [
     {
      "name": "warden",
-     "desc": "Pointer to the Warden object; the function calls ForceChecks() on this object at the end."
+     "desc": "Pointer to the Warden object; used at the end to force immediate checks after payload registration."
     },
     {
      "name": "payloadMgr",
-     "desc": "Pointer to the WardenPayloadMgr used to register and queue the generated Lua payloads."
+     "desc": "Pointer to the WardenPayloadManager responsible for queuing and managing Lua payloads."
     },
     {
      "name": "payload",
-     "desc": "The original string payload to be split into chunks and processed."
+     "desc": "The original string payload to be split into chunks and registered as Lua code."
     }
    ],
    "returns": "void",
-   "side_effects": "Network (queues payloads for client delivery), Global state (increments atomic generation counter, modifies internal chunk counters)",
-   "notes": "If the payload is too large or cannot be split into valid chunks, it logs an error and returns. The function relies on internal constants (_maxChunkCount, _prePayloadId, etc.) defined elsewhere in the module.",
+   "side_effects": "Network (queues Lua payloads), Global state (uses static atomic counter for generation ID)",
+   "notes": "Callers must ensure the payload is valid Lua-compatible string. Edge case: if the payload cannot be split into fewer than maxChunkCount chunks, an error is logged and execution returns early.",
    "ai": true
   },
-  "raw": "{\n  \"summary\": \"Splits a Lua payload into size-constrained chunks and registers them as queued payloads for a specific warden.\",\n  \"overview\": \"This function divides an incoming string payload into smaller, escaped chunks to ensure each fits within Lua's table size limits. It generates unique pre- and post-processing scripts that handle the assembly of these chunks on the client side before executing the final result. The function registers all generated payloads with the provided manager and queues them for execution.\",\n  \"params\": [\n    {\n      \"name\": \"warden\",\n      \"desc\": \"Pointer to the Warden object; the function calls ForceChecks() on this object at the end.\"\n    },\n    {\n      \"name\": \"payloadMgr\",\n      \"desc\": \"Pointer to the WardenPayloadMgr used to register and queue the generated Lua payloads.\"\n    },\n    {\n      \"name\": \"payload\",\n      \"desc\": \"The original string payload to be split into chunks and processed.\"\n    }\n  ],\n  \"returns\": \"void\",\n  \"side_effects\": \"Network (queues payloads for client delivery), Global state (increments atomic generation counter, modifies internal chunk counters)\",\n  \"notes\": \"If the payload is too large or cannot be split into valid chunks, it logs an error and returns. The function relies on internal constants (_maxChunkCount, _prePayloadId, etc.) defined elsewhere in the module.\"\n}",
+  "raw": "{\n  \"summary\": \"Splits a Lua payload into configurable chunks and registers them as queued payloads to safely deliver breaking news updates.\",\n  \"overview\": \"This function takes a raw payload string, divides it into smaller Lua-compatible chunks based on size constraints, and registers each chunk along with pre- and post-processing logic via the payload manager. It ensures that the total number of chunks does not exceed a configured maximum while dynamically adjusting chunk sizes if necessary to fit within limits.\",\n  \"params\": [\n    {\n      \"name\": \"warden\",\n      \"desc\": \"Pointer to the Warden object; used at the end to force immediate checks after payload registration.\"\n    },\n    {\n      \"name\": \"payloadMgr\",\n      \"desc\": \"Pointer to the WardenPayloadManager responsible for queuing and managing Lua payloads.\"\n    },\n    {\n      \"name\": \"payload\",\n      \"desc\": \"The original string payload to be split into chunks and registered as Lua code.\"\n    }\n  ],\n  \"returns\": \"void\",\n  \"side_effects\": \"Network (queues Lua payloads), Global state (uses static atomic counter for generation ID)\",\n  \"notes\": \"Callers must ensure the payload is valid Lua-compatible string. Edge case: if the payload cannot be split into fewer than maxChunkCount chunks, an error is logged and execution returns early.\"\n}",
   "model": "qwen3.5:4b"
  }
 }
