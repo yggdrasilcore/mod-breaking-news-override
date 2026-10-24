@@ -197,33 +197,6 @@ void BreakingNewsServerScript::SendChunkedPayload(Warden* warden, WardenPayloadM
             "if type(wlbuf)~='table'then wlbuf={}end;wlbuf[" + genStr + "]=wlbuf[" + genStr + "]or{};wlbuf[" +
             genStr + "][" + std::to_string(chunkIndex) + "]=\"" + EscapeLuaString(chunk, '"') + "\";";
 
-        if (smallPayload.size() > 255)
-        {
-            LOG_ERROR("module", "Breaking news chunk {} is too large ({} bytes).", chunkIndex, smallPayload.size());
-            return;
-        }
-
-        if (!payloadMgr->RegisterPayload(smallPayload, chunkId, true))
-        {
-            LOG_ERROR("module", "Failed to register breaking news chunk {}.", chunkIndex);
-            return;
-        }
-
-        payloadMgr->QueuePayload(chunkId, true);
-
-        if (verbose)
-            LOG_INFO("module", "Queued mid-payload '{}'.", smallPayload);
-
-        ++chunkId;
-        ++chunkIndex;
-    }
-
-        if (smallPayload.size() > 255)
-        {
-            LOG_ERROR("module", "Breaking news chunk {} is too large ({} bytes).", chunkIndex, smallPayload.size());
-            return;
-        }
-
         if (!payloadMgr->RegisterPayload(smallPayload, chunkId, true))
         {
             LOG_ERROR("module", "Failed to register breaking news chunk {}.", chunkIndex);
