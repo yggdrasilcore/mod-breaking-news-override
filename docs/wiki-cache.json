@@ -120,10 +120,10 @@
   "model": "qwen3.5:4b"
  },
  "src/BreakingNews.cpp::CanPacketSend@795198f3:qwen3-5-4b": {
-  "hash": "3c2f916bed6e",
+  "hash": "44190da26eb1",
   "doc": {
    "summary": "Checks if a packet should be sent based on BreakingNews configuration and session state.",
-   "overview": "This function determines whether to process a specific packet by first verifying global BreakingNews settings. If the feature is disabled, it immediately returns true without further checks. For the CHAR_ENUM opcode, it validates that the session has an initialized Warden instance with a configured payload before proceeding.",
+   "overview": "This function determines whether to process a specific packet by first verifying global BreakingNews settings. If the feature is disabled, it immediately returns true without further checks. For character enumeration packets, it validates that the session has an initialized Warden instance with a configured payload before proceeding.",
    "params": [
     {
      "name": "session",
@@ -135,11 +135,11 @@
     }
    ],
    "returns": "bool",
-   "side_effects": "Network (via SendChunkedPayload), Global State (modifies bn_Enabled and bn_Formatted via mutex lock)",
-   "notes": "Calls LoadBreakingNews if caching is enabled; returns true for all non-CHAR_ENUM opcodes regardless of configuration.",
+   "side_effects": "Network (via SendChunkedPayload), Global State (LoadBreakingNews)",
+   "notes": "Callers should ensure session validity before invoking. Returns true regardless of whether the packet was actually sent, indicating permission to proceed.",
    "ai": true
   },
-  "raw": "{\n  \"summary\": \"Checks if a packet should be sent based on BreakingNews configuration and session state.\",\n  \"overview\": \"This function determines whether to process a specific packet by first verifying global BreakingNews settings. If the feature is disabled, it immediately returns true without further checks. For the CHAR_ENUM opcode, it validates that the session has an initialized Warden instance with a configured payload before proceeding.\",\n  \"params\": [\n    {\n      \"name\": \"session\",\n      \"desc\": \"Pointer to the WorldSession object representing the client connection.\"\n    },\n    {\n      \"name\": \"packet\",\n      \"desc\": \"Reference to the WorldPacket object being evaluated for sending.\"\n    }\n  ],\n  \"returns\": \"bool\",\n  \"side_effects\": \"Network (via SendChunkedPayload), Global State (modifies bn_Enabled and bn_Formatted via mutex lock)\",\n  \"notes\": \"Calls LoadBreakingNews if caching is enabled; returns true for all non-CHAR_ENUM opcodes regardless of configuration.\"\n}",
+  "raw": "{\n  \"summary\": \"Checks if a packet should be sent based on BreakingNews configuration and session state.\",\n  \"overview\": \"This function determines whether to process a specific packet by first verifying global BreakingNews settings. If the feature is disabled, it immediately returns true without further checks. For character enumeration packets, it validates that the session has an initialized Warden instance with a configured payload before proceeding.\",\n  \"params\": [\n    {\n      \"name\": \"session\",\n      \"desc\": \"Pointer to the WorldSession object representing the client connection.\"\n    },\n    {\n      \"name\": \"packet\",\n      \"desc\": \"Reference to the WorldPacket object being evaluated for sending.\"\n    }\n  ],\n  \"returns\": \"bool\",\n  \"side_effects\": \"Network (via SendChunkedPayload), Global State (LoadBreakingNews)\",\n  \"notes\": \"Callers should ensure session validity before invoking. Returns true regardless of whether the packet was actually sent, indicating permission to proceed.\"\n}",
   "model": "qwen3.5:4b"
  },
  "src/BreakingNews.cpp::OnAfterConfigLoad@d8ef3d99:qwen3-5-4b": {
@@ -171,17 +171,17 @@
   "model": "qwen3.5:4b"
  },
  "src/BreakingNews.h::BreakingNewsServerScript@5ef56616:qwen3-5-4b": {
-  "hash": "6ddca93c6500",
+  "hash": "34c334c48d9b",
   "doc": {
-   "summary": "A server script hook designed to intercept and manage packet transmission for specific game mechanics.",
-   "overview": "The BreakingNewsServerScript class extends the base ServerScript functionality by registering a hook capable of modifying outgoing packets. It provides utility methods for processing chunked data payloads, allowing the server to efficiently transmit large amounts of information in smaller segments to clients or entities like wardens.",
+   "summary": "A server script hook that intercepts and validates network packets before they are sent to clients.",
+   "overview": "The BreakingNewsServerScript class extends the ServerScript base class to implement packet-level filtering for breaking news announcements. It registers a SERVERHOOK_CAN_PACKET_SEND hook, allowing it to inspect outgoing WorldPacket data before transmission. The script utilizes internal methods to manage payload construction and delivery to specific warden entities.",
    "params": [],
    "returns": "void",
-   "side_effects": "Network",
-   "notes": "Callers should ensure packet integrity is maintained when using GetChunks and SendChunkedPayload. Edge cases include handling empty payloads or invalid chunk sizes.",
+   "side_effects": "Network (packet interception), Global state (script execution context)",
+   "notes": "Callers must ensure the packet content matches expected breaking news formats; edge cases include malformed payloads or concurrent warden updates.",
    "ai": true
   },
-  "raw": "{\n  \"summary\": \"A server script hook designed to intercept and manage packet transmission for specific game mechanics.\",\n  \"overview\": \"The BreakingNewsServerScript class extends the base ServerScript functionality by registering a hook capable of modifying outgoing packets. It provides utility methods for processing chunked data payloads, allowing the server to efficiently transmit large amounts of information in smaller segments to clients or entities like wardens.\",\n  \"params\": [],\n  \"returns\": \"void\",\n  \"side_effects\": \"Network\",\n  \"notes\": \"Callers should ensure packet integrity is maintained when using GetChunks and SendChunkedPayload. Edge cases include handling empty payloads or invalid chunk sizes.\"\n}",
+  "raw": "{\n  \"summary\": \"A server script hook that intercepts and validates network packets before they are sent to clients.\",\n  \"overview\": \"The BreakingNewsServerScript class extends the ServerScript base class to implement packet-level filtering for breaking news announcements. It registers a SERVERHOOK_CAN_PACKET_SEND hook, allowing it to inspect outgoing WorldPacket data before transmission. The script utilizes internal methods to manage payload construction and delivery to specific warden entities.\",\n  \"params\": [],\n  \"returns\": \"void\",\n  \"side_effects\": \"Network (packet interception), Global state (script execution context)\",\n  \"notes\": \"Callers must ensure the packet content matches expected breaking news formats; edge cases include malformed payloads or concurrent warden updates.\"\n}",
   "model": "qwen3.5:4b"
  },
  "src/BreakingNews.h::BreakingNewsWorldScript@75ebe8fa:qwen3-5-4b": {
@@ -253,6 +253,66 @@
    "ai": true
   },
   "raw": "{\n  \"summary\": \"Escapes special characters and control sequences in a C++ string to produce a valid Lua string representation.\",\n  \"overview\": \"This function takes a standard C++ string and a quote character, then iterates through each character to generate an escaped version suitable for embedding in Lua code. It specifically handles backslashes and the specified quote by doubling them, while also converting control characters (bytes below 0x20 or equal to 0x7F) into their hexadecimal escape sequences.\",\n  \"params\": [\n    {\n      \"name\": \"value\",\n      \"desc\": \"The input string containing characters that may need escaping.\"\n    },\n    {\n      \"name\": \"quote\",\n      \"desc\": \"The character used to delimit the resulting Lua string (default is typically '\\\"').\"\n    }\n  ],\n  \"returns\": \"std::string\",\n  \"side_effects\": \"None\",\n  \"notes\": \"Used by the BreakingNews module to safely format strings for Lua execution; callers must ensure the output is passed directly to Lua's string functions without further processing.\"\n}",
+  "model": "qwen3.5:4b"
+ },
+ "__overview__@b6d2dc328e93:qwen3-5-4b": {
+  "hash": "b6d2dc328e93",
+  "doc": {
+   "summary": "The mod-breaking-news-override module intercepts character screen packets to inject custom HTML-formatted breaking news. It reads a configuration file, processes the content into Lua-safe chunks, and injects it via ServerAlertText.",
+   "body": "# mod-breaking-news-override\n\n## Overview\nThis C++ module overrides the standard character screen behavior to display custom \"Breaking News\" updates. Instead of showing generic system messages, it renders HTML-formatted text directly on the client's character screen using the `ServerAlertText` frame.\n\nThe module operates by intercepting network packets sent from the server to the client. When a specific packet opcode (`SMSG_CHAR_ENUM`) is detected, the module checks if news is enabled and injects a formatted payload containing the title and body of the breaking news.\n\n## How It Works\nThe workflow involves reading configuration settings, loading an HTML file, formatting the content for Lua injection, and intercepting packets to deliver the result.\n\n1.  **Initialization**: On server startup or config reload, `BreakingNewsWorldScript::OnAfterConfigLoad` checks if the module is enabled via `BreakingNews.Enable`. If enabled, it calls `LoadBreakingNews()`.\n2.  **File Reading**: `TryReadNews` reads the content from the path specified in `BreakingNews.HtmlPath`. It strips carriage returns and newlines to ensure clean text.\n3.  **Formatting & Chunking**: The title and body are processed by `EscapeLuaString` to handle special characters (backslashes, quotes, control characters). The combined string is then split into smaller chunks using `GetChunks` to fit within Lua payload limits (default ~140 bytes).\n4.  **Packet Injection**: `BreakingNewsServerScript::CanPacketSend` intercepts packets. If the opcode matches `SMSG_CHAR_ENUM`, it retrieves the formatted news and calls `SendChunkedPayload` to inject the data into the client.\n\n## Key Functions and Classes\n\n| Component | Description |\n| :--- | :--- |\n| `BreakingNewsWorldScript` | A `WorldScript` that hooks into `WORLDHOOK_ON_AFTER_CONFIG_LOAD`. It reads configuration options and initializes the news data if enabled. |\n| `BreakingNewsServerScript` | A `ServerScript` that hooks into `SERVERHOOK_CAN_PACKET_SEND`. It intercepts character enumeration packets to inject the payload. |\n| `EscapeLuaString` | A static utility function that escapes special characters (backslashes, quotes, control chars) to ensure the HTML content is safe for Lua injection. |\n| `GetChunks` | A static utility function that splits a string into smaller segments based on an escape cost limit, ensuring payloads fit within client constraints. |\n| `TryReadFile` / `TryReadNews` | Static functions responsible for reading the configuration file and the HTML content file respectively. |\n\n## Configuration\n\nThe module relies on several configuration keys defined in `conf/breakingnews.conf.dist`. These control whether the feature is active, where to find the data, and how it behaves.\n\n| Option | Description | Default |\n| :--- | :--- | :--- |\n| `BreakingNews.Enable` | Enables or disables the breaking news display on the character screen. | `0` (Disabled) |\n| `BreakingNews.Title` | The text displayed as the header/title above the news body. | `\"Breaking News\"` |\n| `BreakingNews.HtmlPath` | The file path to the HTML content that will be rendered. Can be absolute or relative. | `\"./breakingnews.html\"` |\n| `BreakingNews.Cache` | If set to `1`, the news is cached on startup. If `0`, it fetches fresh data every login. | `1` (Enabled) |\n| `BreakingNews.Verbose` | Enables verbose logging for debugging purposes. Do not use in production. | `0` (Disabled) |\n\n## Usage Example\n\nTo configure the module, edit your server configuration file to include the following options. Ensure you have a valid HTML file at the specified path.\n\n```ini\n[worldserver]\n\nBreakingNews.Enable = 1\nBreakingNews.Title = \"Server Maintenance\" \nBreakingNews.HtmlPath = \"/path/to/updates.html\"\nBreakingNews.Cache = 1\nBreakingNews.Verbose = 0\n```\n\nThe module will inject the following content into the client's character screen:\n\n```html\n<html>\n<body>    <br/>\n    <h3>|cffD4AF37Server Maintenance|r</h3>\n    <br/>\n    <p>We are performing scheduled maintenance this weekend.</p>\n    <br/>\n    <p>Please plan accordingly.</p>\n</body>\n</html>\n```",
+   "ai": true
+  },
+  "raw": "{\"summary\": \"The mod-breaking-news-override module intercepts character screen packets to inject custom HTML-formatted breaking news. It reads a configuration file, processes the content into Lua-safe chunks, and injects it via ServerAlertText.\", \"body\": \"# mod-breaking-news-override\\n\\n## Overview\\nThis C++ module overrides the standard character screen behavior to display custom \\\"Breaking News\\\" updates. Instead of showing generic system messages, it renders HTML-formatted text directly on the client's character screen using the `ServerAlertText` frame.\\n\\nThe module operates by intercepting network packets sent from the server to the client. When a specific packet opcode (`SMSG_CHAR_ENUM`) is detected, the module checks if news is enabled and injects a formatted payload containing the title and body of the breaking news.\\n\\n## How It Works\\nThe workflow involves reading configuration settings, loading an HTML file, formatting the content for Lua injection, and intercepting packets to deliver the result.\\n\\n1.  **Initialization**: On server startup or config reload, `BreakingNewsWorldScript::OnAfterConfigLoad` checks if the module is enabled via `BreakingNews.Enable`. If enabled, it calls `LoadBreakingNews()`.\\n2.  **File Reading**: `TryReadNews` reads the content from the path specified in `BreakingNews.HtmlPath`. It strips carriage returns and newlines to ensure clean text.\\n3.  **Formatting & Chunking**: The title and body are processed by `EscapeLuaString` to handle special characters (backslashes, quotes, control characters). The combined string is then split into smaller chunks using `GetChunks` to fit within Lua payload limits (default ~140 bytes).\\n4.  **Packet Injection**: `BreakingNewsServerScript::CanPacketSend` intercepts packets. If the opcode matches `SMSG_CHAR_ENUM`, it retrieves the formatted news and calls `SendChunkedPayload` to inject the data into the client.\\n\\n## Key Functions and Classes\\n\\n| Component | Description |\\n| :--- | :--- |\\n| `BreakingNewsWorldScript` | A `WorldScript` that hooks into `WORLDHOOK_ON_AFTER_CONFIG_LOAD`. It reads configuration options and initializes the news data if enabled. |\\n| `BreakingNewsServerScript` | A `ServerScript` that hooks into `SERVERHOOK_CAN_PACKET_SEND`. It intercepts character enumeration packets to inject the payload. |\\n| `EscapeLuaString` | A static utility function that escapes special characters (backslashes, quotes, control chars) to ensure the HTML content is safe for Lua injection. |\\n| `GetChunks` | A static utility function that splits a string into smaller segments based on an escape cost limit, ensuring payloads fit within client constraints. |\\n| `TryReadFile` / `TryReadNews` | Static functions responsible for reading the configuration file and the HTML content file respectively. |\\n\\n## Configuration\\n\\nThe module relies on several configuration keys defined in `conf/breakingnews.conf.dist`. These control whether the feature is active, where to find the data, and how it behaves.\\n\\n| Option | Description | Default |\\n| :--- | :--- | :--- |\\n| `BreakingNews.Enable` | Enables or disables the breaking news display on the character screen. | `0` (Disabled) |\\n| `BreakingNews.Title` | The text displayed as the header/title above the news body. | `\\\"Breaking News\\\"` |\\n| `BreakingNews.HtmlPath` | The file path to the HTML content that will be rendered. Can be absolute or relative. | `\\\"./breakingnews.html\\\"` |\\n| `BreakingNews.Cache` | If set to `1`, the news is cached on startup. If `0`, it fetches fresh data every login. | `1` (Enabled) |\\n| `BreakingNews.Verbose` | Enables verbose logging for debugging purposes. Do not use in production. | `0` (Disabled) |\\n\\n## Usage Example\\n\\nTo configure the module, edit your server configuration file to include the following options. Ensure you have a valid HTML file at the specified path.\\n\\n```ini\\n[worldserver]\\n\\nBreakingNews.Enable = 1\\nBreakingNews.Title = \\\"Server Maintenance\\\" \\nBreakingNews.HtmlPath = \\\"/path/to/updates.html\\\"\\nBreakingNews.Cache = 1\\nBreakingNews.Verbose = 0\\n```\\n\\nThe module will inject the following content into the client's character screen:\\n\\n```html\\n<html>\\n<body>    <br/>\\n    <h3>|cffD4AF37Server Maintenance|r</h3>\\n    <br/>\\n    <p>We are performing scheduled maintenance this weekend.</p>\\n    <br/>\\n    <p>Please plan accordingly.</p>\\n</body>\\n</html>\\n```\"}",
+  "model": "qwen3.5:4b"
+ },
+ "src/BreakingNews.cpp::GetChunks@c65b1a3a:qwen3-5-4b": {
+  "hash": "59670a417e9b",
+  "doc": {
+   "summary": "Splits a string into chunks based on a maximum allowed length for escaped characters.",
+   "overview": "This function iterates through the input string, calculating a cost for each character where backslashes and quotes cost 2, control characters cost 4, and others cost 1. It accumulates these costs until adding the next character would exceed the specified maxEscaped limit, at which point it pushes the accumulated substring to the result vector and resets the counter.",
+   "params": [
+    {
+     "name": "s",
+     "desc": "The input string to be split into chunks."
+    },
+    {
+     "name": "maxEscaped",
+     "desc": "The maximum total cost allowed for escaped characters in a single chunk."
+    }
+   ],
+   "returns": "std::vector<std::string>",
+   "side_effects": "None",
+   "notes": "Callers should ensure maxEscaped is non-negative; the function handles trailing content after the final cut-off by including it in the last chunk if space remains.",
+   "ai": true
+  },
+  "raw": "{\n  \"summary\": \"Splits a string into chunks based on a maximum allowed length for escaped characters.\",\n  \"overview\": \"This function iterates through the input string, calculating a cost for each character where backslashes and quotes cost 2, control characters cost 4, and others cost 1. It accumulates these costs until adding the next character would exceed the specified maxEscaped limit, at which point it pushes the accumulated substring to the result vector and resets the counter.\",\n  \"params\": [\n    {\n      \"name\": \"s\",\n      \"desc\": \"The input string to be split into chunks.\"\n    },\n    {\n      \"name\": \"maxEscaped\",\n      \"desc\": \"The maximum total cost allowed for escaped characters in a single chunk.\"\n    }\n  ],\n  \"returns\": \"std::vector<std::string>\",\n  \"side_effects\": \"None\",\n  \"notes\": \"Callers should ensure maxEscaped is non-negative; the function handles trailing content after the final cut-off by including it in the last chunk if space remains.\"\n}",
+  "model": "qwen3.5:4b"
+ },
+ "src/BreakingNews.cpp::SendChunkedPayload@6c1f7130:qwen3-5-4b": {
+  "hash": "5e6f8be99370",
+  "doc": {
+   "summary": "Splits a Lua payload into size-constrained chunks and registers them as queued payloads for a specific warden.",
+   "overview": "This function divides an incoming string payload into smaller, escaped chunks to ensure each fits within Lua's table size limits. It generates unique pre- and post-processing scripts that handle the assembly of these chunks on the client side before executing the final result. The function registers all generated payloads with the provided manager and queues them for execution.",
+   "params": [
+    {
+     "name": "warden",
+     "desc": "Pointer to the Warden object; the function calls ForceChecks() on this object at the end."
+    },
+    {
+     "name": "payloadMgr",
+     "desc": "Pointer to the WardenPayloadMgr used to register and queue the generated Lua payloads."
+    },
+    {
+     "name": "payload",
+     "desc": "The original string payload to be split into chunks and processed."
+    }
+   ],
+   "returns": "void",
+   "side_effects": "Network (queues payloads for client delivery), Global state (increments atomic generation counter, modifies internal chunk counters)",
+   "notes": "If the payload is too large or cannot be split into valid chunks, it logs an error and returns. The function relies on internal constants (_maxChunkCount, _prePayloadId, etc.) defined elsewhere in the module.",
+   "ai": true
+  },
+  "raw": "{\n  \"summary\": \"Splits a Lua payload into size-constrained chunks and registers them as queued payloads for a specific warden.\",\n  \"overview\": \"This function divides an incoming string payload into smaller, escaped chunks to ensure each fits within Lua's table size limits. It generates unique pre- and post-processing scripts that handle the assembly of these chunks on the client side before executing the final result. The function registers all generated payloads with the provided manager and queues them for execution.\",\n  \"params\": [\n    {\n      \"name\": \"warden\",\n      \"desc\": \"Pointer to the Warden object; the function calls ForceChecks() on this object at the end.\"\n    },\n    {\n      \"name\": \"payloadMgr\",\n      \"desc\": \"Pointer to the WardenPayloadMgr used to register and queue the generated Lua payloads.\"\n    },\n    {\n      \"name\": \"payload\",\n      \"desc\": \"The original string payload to be split into chunks and processed.\"\n    }\n  ],\n  \"returns\": \"void\",\n  \"side_effects\": \"Network (queues payloads for client delivery), Global state (increments atomic generation counter, modifies internal chunk counters)\",\n  \"notes\": \"If the payload is too large or cannot be split into valid chunks, it logs an error and returns. The function relies on internal constants (_maxChunkCount, _prePayloadId, etc.) defined elsewhere in the module.\"\n}",
   "model": "qwen3.5:4b"
  }
 }
