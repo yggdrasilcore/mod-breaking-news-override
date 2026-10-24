@@ -178,15 +178,19 @@ void BreakingNewsServerScript::SendChunkedPayload(Warden* warden, WardenPayloadM
         return;
     }
 
-    payloadMgr->QueuePayload(_prePayloadId);
-    warden->ForceChecks();
+    payloadMgr->RegisterPayload(postPayload, _postPayloadId, true);
+
+    // Queue pre-payload
+    payloadMgr->QueuePayload(_prePayloadId, true);
 
     if (verbose)
-        LOG_INFO("module", "Sent pre-payload '{}'.", prePayload);
+        LOG_INFO("module", "Queued pre-payload '{}'.", prePayload);
 
     uint16 chunkId = _chunkPayloadIdBase;
     uint32 chunkIndex = 1;
 
+    // Queue all chunk payloads (pushToFront so they execute in order
+    // before the post-payload which is queued last).
     for (auto const& chunk : chunks)
     {
         std::string const smallPayload =
@@ -205,11 +209,10 @@ void BreakingNewsServerScript::SendChunkedPayload(Warden* warden, WardenPayloadM
             return;
         }
 
-        payloadMgr->QueuePayload(chunkId);
-        warden->ForceChecks();
+        payloadMgr->QueuePayload(chunkId, true);
 
         if (verbose)
-            LOG_INFO("module", "Sent mid-payload '{}'.", smallPayload);
+            LOG_INFO("module", "Queued mid-payload '{}'.", smallPayload);
 
         ++chunkId;
         ++chunkIndex;
@@ -221,11 +224,13 @@ void BreakingNewsServerScript::SendChunkedPayload(Warden* warden, WardenPayloadM
         return;
     }
 
+    // Queue post-payload last so it runs after all chunks.
     payloadMgr->QueuePayload(_postPayloadId);
-    warden->ForceChecks();
 
     if (verbose)
-        LOG_INFO("module", "Sent post-payload '{}'.", postPayload);
+        LOG_INFO("module", "Queued post-payload '{}'.", postPayload);
+
+    warden->ForceChecks();
 }
 
 void LoadBreakingNews()
