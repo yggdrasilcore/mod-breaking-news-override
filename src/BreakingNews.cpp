@@ -264,11 +264,6 @@ bool BreakingNewsServerScript::CanPacketSend(WorldSession* session, WorldPacket&
         if (!warden)
             return true;
 
-        // Trying to use Warden before it has initialized,
-        // so we exit.
-        if (!warden->IsInitialized())
-            return true;
-
         if (formatted == "")
             return true;
 
